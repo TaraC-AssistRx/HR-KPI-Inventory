@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HR KPI Dashboard</title>
+<style>
+:root{color-scheme:light;--ink:#1c2430;--mut:#6b7686;--line:#e3e7ee;--bg:#f5f7fa;--card:#fff;--brand:#2b5fd9;--brand2:#e8eefc;--g:#1f9d63;--y:#e0a100;--r:#d64545;--tc:#2b5fd9;}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+header{background:#fff;border-bottom:1px solid var(--line);padding:14px 24px 0;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:18px;display:flex;justify-content:space-between;align-items:baseline}
+header h1 small{font-weight:400;color:var(--mut);font-size:12px}
+nav{display:flex;gap:4px;margin-top:10px;flex-wrap:wrap}
+nav button{border:0;background:none;padding:9px 14px;font-size:13px;color:var(--mut);cursor:pointer;border-bottom:3px solid transparent;font-weight:600}
+nav button.on{color:var(--brand);border-bottom-color:var(--brand)}
+.sub{display:flex;gap:6px;margin:0 0 16px;flex-wrap:wrap}
+.sub button{border:1px solid var(--line);background:#fff;border-radius:16px;padding:5px 13px;font-size:12px;cursor:pointer;color:var(--mut);font-weight:600}
+.sub button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+main{padding:20px 24px;max-width:1280px;margin:0 auto}
+h2{font-size:15px;margin:22px 0 4px}
+h2:first-child{margin-top:0}
+.note{color:var(--mut);font-size:12px;margin:0 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.card .lab{font-size:12px;color:var(--mut);display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.card .val{font-size:28px;font-weight:700;margin:6px 0 2px}
+.card .val.na{color:#b4bcc9;font-size:22px;font-weight:600}
+.card .s{font-size:12px;color:var(--mut)}
+.card .tgt{font-size:11px;color:var(--mut);margin-top:4px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.b{font-size:10px;font-weight:700;padding:2px 7px;border-radius:9px;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px}
+.b.kpi{background:#e3f4ec;color:#157a4b}.b.prop{background:#fff3d6;color:#8a6200}.b.trk{background:#eceff4;color:#566175}.b.ph{background:#fdecec;color:#a33}
+.chartcard h3{margin:0 0 2px;font-size:13px}
+.chartcard .note{margin-bottom:6px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--mut);font-weight:600;font-size:12px}
+.coe{cursor:pointer}
+.coe:hover{border-color:var(--brand)}
+.coe h3{margin:0 0 8px;font-size:14px}
+.bar{height:6px;background:#eceff4;border-radius:3px;overflow:hidden;margin:6px 0 4px}
+.bar i{display:block;height:100%;background:var(--brand)}
+.ph-box{border:1px dashed #c6cdd9;border-radius:10px;padding:26px;text-align:center;color:var(--mut);background:#fafbfc}
+.legend{font-size:11px;color:var(--mut);display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.flag{background:#fff8e6;border:1px solid #f3dca0;border-radius:8px;padding:8px 12px;font-size:12px;color:#6d5300;margin-bottom:12px}
+ul.m{margin:6px 0 0;padding-left:18px;color:var(--mut);font-size:12px}
+
+.pbar{display:flex;gap:6px;margin-left:auto}
+.pbar button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:var(--ink);font-weight:600}
+.pbar button:hover{background:var(--brand2)}
+.psec{margin:0 0 6px;padding-bottom:6px;border-bottom:2px solid var(--brand);font-size:12px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+@page{size:letter landscape;margin:.4in}
+@media print{
+ body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ header nav,.pbar,.sub{display:none!important}
+ header{position:static;border:0;padding:0 0 8px}
+ main{padding:0;max-width:none}
+ .card,.flag,table tr{break-inside:avoid}
+ .pgbrk{break-before:page}
+ .pgbrk:first-child{break-before:auto}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1><span>HR KPI Dashboard <small id="asof"></small></span><span class="pbar"><button onclick="printView('tab')">PDF: this tab</button><button onclick="printView('coe')">PDF: this COE</button><button onclick="printView('all')">PDF: all tabs</button></span></h1>
+  <nav id="nav"></nav>
+</header>
+<main id="main"></main>
+
+<script>
+/* ============================================================
+   DATA — update this block as new data arrives
+   ============================================================ */
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+// HealthiestYou (YTD cumulative). Order per month: Registered, then [visits, savings] per product
+const HY={
+ months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'],
+ registered:[755,755,800,834,870,902,921,937],
+ products:{
+  'General Medicine':{v:[89,178,279,385,499,578,675,759],s:[46813,93626,146751,202506,262469,304022,355043,399226]},
+  'Dermatology':{v:[18,29,42,55,70,81,92,102],s:[3618,5829,8442,11055,14070,16281,18492,20502]},
+  'Nutrition':{v:[2,5,9,15,16,18,20,22],s:[288,720,1296,2160,2304,2592,2880,3168]},
+  'Mental Health Care':{v:[45,90,136,188,238,297,361,426],s:[8775,17550,27105,36660,46410,57915,70395,83070]}
+ }
+};
+// 401(k) — May 2026 vs Sep 2026 snapshots (loans & withdrawals reported as a % rate)
+const FIN={asOf:'Sep 2026',prior:'May 2026',participation:0.59,avgContrib:0.059,loans:0.21,
+ may:{savings:0.12,deferral:0.066,contributing:1211,participation:0.43,loans:0.16,fullMatch:856,noMatch:393,planning:0.04},
+ sep:{savings:0.10,deferral:0.059,contributing:1581,participation:0.59,loans:0.21,fullMatch:886,noMatch:722,planning:0.04},
+ industrySavings:0.15};
+const finPts=(a,b)=>{const v=Math.round((a-b)*1000)/10;return (v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(1).replace(/\.0$/,'')+' pts'};
+const ADA={asOf:'Oct 2026',active:88,noPaper:109,completed:64,inactive:40,declined:34,canceled:24};
+// Workers Comp — monthly values (Oct 2026 not yet reported; missed work days not yet provided)
+const WC={asOf:'Sep 2026',months:['2025-06', '2025-07', '2025-08', '2025-09', '2025-10', '2025-11', '2025-12', '2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09'],claims:[1, 1, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 1, 0, 0],closed:[1, 1, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0],cost:[6175, 0, 0, 0, 0, 0, 2426, 29317, 1845, 945, 0, 0, 0, 12518, 0, 0],missedDays:null};
+const wcYtd=(()=>{const i=WC.months.map((m,k)=>m.startsWith('2026')?k:-1).filter(k=>k>=0);const f=a=>i.reduce((x,k)=>x+a[k],0);return {claims:f(WC.claims),closed:f(WC.closed),cost:f(WC.cost),n:i.length}})();
+const wcLbl=WC.months.map(m=>MONTHS[+m.slice(5)-1]+(m.slice(5)==='01'||m===WC.months[0]?" '"+m.slice(2,4):''));
+
+// HR Operations — Employment Files Audit (Reviewer Tracker / Progress Calculations tabs; aggregates only, no employee-level data)
+const AUDIT={asOf:'2026-10-22',due:'2026-11-25',total:2842,completed:2650,remaining:192,requiredDaily:7.68,rolling5:52.2,projected:'2026-10-28',trackerStatus:'GREEN',
+ daily:[['2026-08-10',33],['2026-08-11',30],['2026-08-12',34],['2026-08-13',31],['2026-08-14',26],['2026-08-17',20],['2026-08-18',24],['2026-08-19',40],['2026-08-20',41],['2026-08-21',35],['2026-08-24',35],['2026-08-25',42],['2026-08-26',40],['2026-08-27',33],['2026-08-28',42],['2026-08-31',31],['2026-09-01',41],['2026-09-02',42],['2026-09-03',31],['2026-09-04',33],['2026-09-07',34],['2026-09-08',30],['2026-09-09',30],['2026-09-10',55],['2026-09-11',50],['2026-09-14',50],['2026-09-15',50],['2026-09-16',50],['2026-09-17',50],['2026-09-18',51],['2026-09-21',52],['2026-09-22',65],['2026-09-23',63],['2026-09-24',62],['2026-09-25',63],['2026-09-28',70],['2026-09-29',92],['2026-09-30',63],['2026-10-01',63],['2026-10-02',63],['2026-10-05',63],['2026-10-06',71],['2026-10-07',71],['2026-10-08',72],['2026-10-09',71],['2026-10-12',76],['2026-10-13',74],['2026-10-14',51],['2026-10-15',50],['2026-10-16',51],['2026-10-19',60],['2026-10-20',68],['2026-10-21',41],['2026-10-22',41]]};
+// HR Policies Checklist 5.1 (counts recomputed from policy rows; sheet header counts are out of date)
+const POL={asOf:'5/1 checklist',rows:[
+['Recruitment & Hiring',8,8],['Employment Terms & Conditions',3,2],['Time Off & Leave',5,0],['Discipline & Termination',3,3],['Performance Management',3,3],['Training & Development',2,0],['Health, Safety & Wellness',1,0],['HR Compliance & Governance',3,0],['Onboarding',3,3]],
+ // [category, total, complete] (HIPAA N/A is counted in total here; excluded below)
+ status:{Complete:19,'In Progress':2,'Not Started':6,'Needs Update':1,'Status not set':2,'N/A':1},
+ gaps:[['Personnel Files Policy','Employment Terms & Conditions','Not Started'],['FMLA Policy','Time Off & Leave','Not Started'],['Jury Duty Leave Policy','Time Off & Leave','Not Started'],['Military Leave (USERRA) Policy','Time Off & Leave','Not Started'],['Bereavement Leave Policy','Time Off & Leave','In Progress'],['Parental Leave Policy','Time Off & Leave','In Progress'],['Training & Development Policy','Training & Development','Status not set'],['Mandatory Training Requirements','Training & Development','Status not set'],['Drug & Alcohol Policy','Health, Safety & Wellness','Not Started'],['Employee Handbook & Attestation','HR Compliance & Governance','Needs Update'],['Records Retention Policy','HR Compliance & Governance','Not Started']]};
+
+// Talent Review — from Org Diagnostic tool (EmployeeDetails, data date 9/29/2026; employees only; aggregates only)
+const TR={asOf:'9/29/2026',employees:2712,rated:88,dirPlus:122,dirPlusRated:86,
+ nine:{'3-3':['Future Leader',11],'2-3':['Future Star',17],'1-3':['Potential Star',1],'3-2':['High Impact Performer',17],'2-2':['Key Performer',25],'1-2':['Potential Performer',3],'3-1':['Trusted Professional',3],'2-1':['Stable Contributor',6],'1-1':['Under Performer',5]},
+ topTalent:45,topByLevel:{Dir:22,VP:21,Exec:1,Prof:1},keyRoles:21,keyRolesTopTalent:16,keyByLevel:{VP:20,Dir:1}};
+// Succession Planning — from Succession Planning Workbook (Master), aggregates only
+const SUC={asOf:'Oct 2026',roles:47,rolesWithPlan:47,withInternal:39,withTwoInternal:25,withInternalReadyNow:21,
+ keyRoles:21,keyWithInternalReadyNow:8,keyWithInternal:14,
+ slotsFilled:118,internal:78,external:31,restructure:9,
+ readiness:{'Ready Now':24,'1-2 Years':36,'3-5 Years':16,'5+ Years':2},
+ devPlan:{'On Track':4,'Not Started':58,'N/A':16}};
+
+// Reorg / Redeployments (2026) — counts as provided
+const RD=[
+ {n:'Project Elevate',d:'Jun 26',red:null,exit:4,pend:0,note:'Cross-functional reorg: Technology, Product, PMO'},
+ {n:'Madrigal',d:'Jun 26',red:79,declined:2,exit:15,pend:0,note:'81 offered redeployment; 2 declined'},
+ {n:'Implementation Team / Site Lead Role',d:'Jun 26',red:22,exit:0,pend:0,note:''},
+ {n:'Eylea',d:'Jul 26',red:20,declined:2,exit:34,pend:0,note:'22 offered redeployment; 2 declined'},
+ {n:'Strategic Ops',d:'Aug 26',red:null,exit:4,pend:0,note:''},
+ {n:'Obesity',d:'Sep/Oct 26',red:202,exit:38,pend:95,declined:18,remote:5,note:'202 redeployed across 2 waves; 95 AZ warns unable to redeploy (location) — TA offering placement help and saving a candidate list'},
+ {n:'COA',d:'Sep/Oct 26',red:null,exit:0,pend:57,note:'57 on 60-day warn (wave 1); no wave 2 exits scheduled; potential new Dexcom business may reduce further RIF'}];
+
+// Bonus Spend 2026 — Bonus_Awards_2026_Rollup (pay dates Jan 9 – Sep 18, 2026; anonymized, aggregates only)
+const BON={asOf:'Sep 18, 2026 pay date',total:9198587.67,payments:6311,uniqueEE:3548,
+ types:[['ELT/SLT EBITDA',47,33,3746940.6],['PMO Bonus',238,216,1678545.9],['Patient Solutions Service Excellence / R&R',4206,2943,965432.8],['Discretionary',668,294,793056.8],['General Sign-On',16,16,649500],['Vacation',282,281,406500],['Employee Referral',353,276,316250],['Project Elevate 2.0',12,12,120000],['Project Elevate 1.0',6,6,120000],['PS 90 Day',212,211,105700],['PS 180 Day Success',186,186,93000],['Project Management Incentive',12,12,81531],['Procurement Incentive Plan',1,1,70930.6],['Pharmacy Licensure',22,19,26200],['PS Quality',50,50,25000]],
+ depts:[['Executive Leadership',32,17,3424955.4],['Patient Solutions',4711,2648,2110389.8],['CoAssist Pharmacy',768,345,688608.8],['Project Management',50,36,335330.1],['Product',37,29,315153.4],['Development',43,38,301261.9],['ARx PS Pharmacy',403,237,264520],['Allazo Technology',11,10,255741.8],['Account Management',47,37,214432.2],['Finance',25,20,210949.1]],
+ deptCount:25,
+ monthly:[['Jan',247583],['Feb',573176],['Mar',3672054],['Apr',228012],['May',2780191],['Jun',269085],['Jul',915885],['Aug',116100],['Sep',396502]],
+ ps:{ee:232,spend:223700,types:[['90 Day',211,105700],['180 Day Success',186,93000],['Quality',50,25000]]},
+ acctDiscretionary:1155387.4};
+
+// Glassdoor snapshot (5.0 scale) — from Glassdoor company snapshot, Oct 2026
+const GD={asOf:'Oct 2026',overall:2.8,ratings:276,recommend:0.39,ceoApprove:0.41,scale:5,
+ cats:[['Overall',2.8],['Comp & Benefits',3.0],['Work Life Balance',3.0],['Culture & Values',2.5],['Senior Management',2.5],['Career Opportunities',2.7],['Diversity & Inclusion',3.2]]};
+
+// Engagement Survey — "Your Voice Matters" annual survey, Jan 2026; benchmark: Professional Services (1,000–5,000 employees)
+// Source slide shows top 6 and bottom 6 factors only (Learning & Development appears in both) = 11 unique factors
+const ENG={asOf:'Jan 2026',overall:0.71,bench:0.72,responses:1599,participation:0.56,
+ factors:[['Management',79,83],['Enablement',77,74],['Work & Life Blend',76,77],['Social Connection',76,74],['Alignment & Involvement',73,75],['Learning & Development',72,73],['Teamwork & Ownership',72,76],['Innovation',67,74],['Leadership',66,72],['Collaboration & Communication',63,70],['Feedback & Recognition',63,65],['Company Confidence',72,69],['Service & Quality Focus',72,74]]};
+
+// ERGs — "Top 5 ERG Recap" (Lunch, Learn & Share launched Jun 2, 2026; data through Sep 30, 2026)
+const ERG={asOf:'Sep 30, 2026',count:6,signedUp:189,uniqueAttendees:109,returnRate:0.49,safety:4.5,hubViews:315,courses:5,
+ groups:[['African American / Black',60,[21,24,25],'Most animated chat; talk spans in and outside work'],['Women\'s',61,[16,16,19],'Largest group; uplifting talks on empowerment'],['LGBTQ+',23,[10,9,8],'Deeply supportive and psychologically safe'],['Latinx / Hispanic',27,[11,9,5],'Shared Hispanic Heritage Month resources locally'],['Parents & Caregivers',14,[4,4,7],'Standout work-life balance talks; ready to grow'],['Veterans',4,[4,4,3],'Small but ready for new recruits']],
+ months:['Jul','Aug','Sep'],
+ topics:[['Jun','What DIB Means in Everyday Work'],['Jul','Understanding Identity & Respect'],['Aug','Representation: What We Bring'],['Sep','Generational Diversity & Communication'],['Oct','Cultural Traditions & Holiday Well-Being']],
+ actions:['Women\'s ERG moved to 1 PM','4 of 6 ERGs to be led by employees','AUX code fix with WFM','Cross-ERG Friendsgiving']};
+
+// Workforce Analytics — HR View headcount & turnover report (headcount as of 10/12/26)
+// HR View turnover excludes contractors, RIF, position eliminations, program sunsets, mutual agreements & no-shows; rolling 12-month excludes sunsets
+const WFA={asOf:'10/12/26',headcount:2586,ytd:{hires:1261,terms:1096,vol:400,invol:696},roll:{total:0.267,vol:0.156,invol:0.111},
+ months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct*'],
+ ee:[2548,2666,2896,2882,2869,2810,2739,2750,2695,2586],
+ hires:[134,213,346,141,96,54,67,144,65,1],
+ terms:[89,95,103,137,102,106,126,118,113,107],
+ vol:[33,34,33,53,41,42,42,46,44,32],
+ invol:[56,61,70,84,61,64,84,72,69,75],
+ rTot:[19.8,20.3,18.9,20.3,21.1,22.2,23.1,24.4,25.6,26.7],
+ rVol:[10.7,11.3,10.5,11.2,11.9,12.7,13.3,14.2,14.9,15.6],
+ rInv:[9.1,9.1,8.5,9.1,9.1,9.5,9.8,10.2,10.7,11.1],
+ // [dept, EEs, YTD hires, YTD terms, vol, invol, rolling-12 turnover %] (departments with 25+ employees; null = not reported)
+ depts:[['Patient Solutions',1628,796,800,271,529,31.9],['CoAssist Pharmacy',252,236,135,61,74,0.4],['ARx PS Pharmacy',148,86,78,26,52,63.5],['Project Management Org',66,11,9,5,4,13.6],['Development',57,14,9,2,7,15.8],['Human Resources',49,15,13,7,6,24.5],['Product',49,10,5,3,2,8.2],['Data & Reporting',38,17,10,3,7,28.9],['Account Management',36,14,12,5,7,22.2],['Finance',30,12,6,4,2,20.0],['Internal Systems',28,6,3,2,1,10.7],['Enterprise Data',25,7,4,1,3,8.0]]};
+
+// Workforce mix — headcount views as of 10/12/26
+const WFM={contingent:292,total:2878,
+ contDepts:[['Development',57,81],['Quality & Release Mngmt',23,51],['Patient Solutions',1628,75],['Enterprise Data',25,20],['Product',49,12],['Allazo Technology',11,10],['Data & Reporting',38,17],['Project Management Org',66,9],['CoAssist Pharmacy',252,7],['Architecture & DevOps',15,3],['Human Resources',49,3],['ARx PS Pharmacy',148,2],['Infrastructure & Telecom',20,1],['Business Development',8,1]],
+ segments:[['Exec (CEO / C-Level / EVP)',11],['VP (VP/GVP, Vice President)',33],['Director (Sr Director, Director, Assoc Director)',96],['Manager / Supervisor',263],['Professional',432],['Support',1751]],
+ jobClass:[['CEO/C-Level/EVP',11],['Senior VP/GVP',6],['Vice President',27],['Senior Director',22],['Director',64],['Associate Director',10],['Senior Manager',37],['Manager',90],['Supervisor',136],['Senior/Lead/Professional',112],['Standard Professional',293],['Junior/Associate',27],['Senior/Lead/Associate (Support)',56],['Standard/Analyst/Specialist',1391],['Jr/Coordinator',304]],
+ locations:[['Maitland',639],['Southpark',527],['Overland Park',502],['CoAssist',211],['Arizona, Tempe',88],['Des Moines, IA',7],['Remote',612]],hub:1974,remote:612};
+
+// Highest turnover by rolling-12-month term volume + term reasons (HR View, data as of 10/12/26; excludes sunsets, RIF, position elim, mutual agreements, no-shows)
+const WFT={
+ // [group, program/dept, rolling turnover %, vol %, invol %, EEs, R12 terms, vol terms, invol terms]
+ top:[['Program','NCP Pharmacy COS',66.0,22.2,43.8,144,95,32,63],['Program','Gilead: Advancing Access',31.3,7.6,23.7,249,78,19,59],['Program','UCB: BIMZELX',59.5,24.8,34.7,121,72,30,42],['Program','Galderma',41.0,19.0,22.0,100,41,19,22],['Program','Gilead: L4P Yeztugo',55.1,24.5,30.6,49,27,12,15],['Dept','Human Resources',24.5,16.3,8.2,49,12,8,4],['Dept','Data & Reporting',28.9,10.5,18.4,38,11,4,7],['Dept','Development',15.8,3.5,12.3,57,9,2,7]],
+ reasonsAll:{total:578,rows:[['Attendance',102],['Performance',88],['Personal',76],['Abandoned Job',62],['Better Opportunity',54],['All Other',196]]},
+ reasonsVol:{total:236,rows:[['Personal',76],['Better Opportunity',54],['Job Satisfaction',21],['Health/Medical',19],['Resignation (Lieu of Term)',19],['All Other',47]]},
+ reasonsInvol:{total:342,rows:[['Attendance',102],['Performance',88],['Abandoned Job',62],['Misconduct – Work Avoidance',38],['Misconduct – Behavior',16],['All Other',36]]}};
+
+// Recruiting — open requisitions as of 10/26/26 (by billable flag and department)
+const REQ={asOf:'10/26/26',total:41,billable:6,depts:[['Patient Solutions',6,true],['Project Management Org',8,false],['Development',7,false],['ARx PS Pharmacy',6,false],['Account Management',3,false],['Data & Reporting',3,false],['Quality & Release Mngmt',3,false],['Facilities & Admin',2,false],['Enterprise Data',1,false],['Human Resources',1,false],['Product',1,false]]};
+
+// Recruiting — Time to Fill (assumed days). ADP through Jul 2026; new CRM (iCIMS) launched Aug 2026
+const TTA={months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct*'],
+ hub:[26.5,13.9,16.3,15.8,18.2,14.2,16.0,11.3,17.3,16.7],rx:[14.1,12.8,17.1,8.2,14.4,1.2,9.3,13.4,16.5,39.8],non:[26.2,31.8,14.3,28.1,27.1,26.3,28.0,6.3,23.5,27.0],all:[21.6,14.6,16.3,16.2,19.1,11.3,16.0,11.2,17.5,18.0],
+ ytd:{hub:16.6,rx:14.7,non:23.9,all:16.6},icimsYtd:16.8,crmIdx:7,
+ depts:[['Billable-Hub: Patient Solutions',16.3],['Billable-RX: ARx PS Pharmacy',26.1],['Non-Billable: Project Management Org',26.3],['Non-Billable: Facilities & Admin',36],['Non-Billable: Development',7.3],['Non-Billable: Patient Solutions',4]],
+ programs:[['Pfizer: Paxlovid',43.0],['Gilead: L4P',28.9],['UCB: BIMZELX',25.0],['Gilead: Seladelpar',21.7],['Gilead: Advancing Access',21.3],['No Program Assigned',20.4],['Merck',19.4],['Gilead: HDV/HBV',18.8],['Aimmune/Nestle',18.0],['Sobi',18.0],['Astellas: Xtandi',17.0],['Incyte',17.0],['Gilead: HCV',16.5],['Avadel: Lumryz',16.4],['Scholar Rock',16.0],['Apellis: Syfovre',15.5],['Galderma',14.0],['Novo Nordisk: Norditropin',10.1],['PS - Academy',9.6],['PS: Quality Assurance',8.3],['Gilead: Kite',8.0],['Urogen',7.9],['Novo Nordisk: Obesity',6.5],['PS: Overhead and Admin',4.0]]};
+
+// Leave Administration — Employee Leave Analytics (data as of 10/19/2026; 1/1/26–10/19/26). Status counts: pended derived (646 − 642)
+const LV={asOf:'10/19/26',requests:646,approved:408,hours:54489,employeesApproved:303,intermApproval:0.965,intermHours:5.34,onLeaveToday:27,
+ status:[['Approved',239,'#2f7077'],['Partially Approved',169,'#00a58f'],['Canceled',136,'#073b4c'],['Denied',98,'#a8dadc'],['Pended',4,'#b4bcc9']],
+ monthly:[['Jan',42],['Feb',42],['Mar',64],['Apr',72],['May',65],['Jun',68],['Jul',78],['Aug',52],['Sep',55],['Oct*',25]],
+ reasons:[["Employee's own condition (label truncated in source)",272],['Employee Pregnancy',56],['Care for Child',27],['Care for Parent(s)',25],['Newborn Bonding',11],['Care for Spouse',7],['Personal Leave',4],['Newborn Bonding (2nd variant)',3],['Domestic Violence',1],['Military Duty',1],['Military Training',1]]};
+
+// Performance Management — PIPs & corrective actions from HR Acuity (tracking began May 2026; opened May 6 – Oct 21, 2026; refreshed 10/26/26). Aggregates only
+const PM={asOf:'10/26/26',records:108,employees:90,empDeact:59,empActive:31,
+ actions:[['Written Warning',35,17,18],['Final Warning',53,12,41],['Suspension',2,2,0],['PIP Initiated',13,2,11],['PIP Extended',5,1,4]],
+ pipEmployees:16,pipInitiatedEmployees:12,pipDeact:13,
+ months:['May','Jun','Jul','Aug','Sep','Oct*'],monthly:[14,21,13,36,21,3],monthlyEmp:[13,18,12,30,20,3],
+ monthlyWritten:[4,5,6,14,5,1],monthlyFinal:[6,13,4,14,14,2],monthlyPip:[3,1,3,5,1,0],
+ cats:[['Performance',42],['Attendance',37],['Conduct / Behavior',27],['Other',2]]};
+
+// Benefits — Medical & Pharmacy plan performance, Sep 2025 – Aug 2026 (vendor monthly claims & enrollment report; aggregates only — claimant-level detail intentionally excluded)
+// "Forecast" = plan funding (AssistRx + employee funding); Total expense = claims + admin less Rx rebates & stop-loss reimbursements
+const BEN={asOf:'Aug 2026',
+ months:['Sep-25','Oct-25','Nov-25','Dec-25','Jan-26','Feb-26','Mar-26','Apr-26','May-26','Jun-26','Jul-26','Aug-26'],
+ emp:[1284,1337,1401,1484,1559,1569,1758,1889,1973,1990,1983,1938],
+ mem:[2172,2255,2355,2513,2613,2628,2932,3118,3245,3270,3250,3182],
+ medical:[852244,997022,494695,980921,951356,1534650,1136625,1203272,1332057,1536450,1525667,1824654],
+ rx:[509579,475862,350958,604311,393220,439979,484711,569495,701818,636209,728918,620853],
+ rebates:[474011,2345,0,429782,81821,2623,444923,3761,0,415269,0,0],
+ slReimb:[0,0,203624,72795,0,96714,152391,0,1969,0,0,0],
+ expense:[1113334,1705167,888031,1343251,1533949,2147512,1304835,2057193,2251912,2047396,2570916,2751194],
+ funding:[1347472,1400843,1462651,1557089,1623192,1633850,1895477,2023236,2107956,2122547,2118990,2074978],
+ surplus:[234138,-304324,574620,213838,89243,-513662,590642,-33957,-143956,75151,-451926,-676217],
+ periods:[ // [label, surplus, % of funding]
+  ['Plan year to date (Mar–Aug 2026)',-640262,-5.2],['Prior year, same period (Mar–Aug 2025)',510851,6.7],['Rolling 12 months (Sep 2025 – Aug 2026)',-346409,-1.6],['Calendar year to date (Jan–Aug 2026)',-1064681,-6.8],['Prior year, same period (Jan–Aug 2025)',434082,4.4],['Prior plan year (Mar 2025 – Feb 2026)',804705,4.8]],
+ py:{expense:12983447,funding:12343185,surplus:-640262,ratio:1.052},cy:{expense:16664908,funding:15600227,surplus:-1064681,ratio:1.068},r12:{expense:21714691,funding:21368283,surplus:-346409,ratio:1.016},
+ pmpm:{funded:637,expense:648},
+ largeClaimants:{over400PY:0,over400CY:1,over100PY:11,over100CY:15,over100PYSpend:2007380,newAugOver100:2},
+ // High-cost claimants (aggregated only; no claimant-level attributes): bands of paid claims
+ hc:{py:{count:11,spend:2007380,claims:12300729,bands:[['$300K+',2],['$200K–$300K',1],['$100K–$200K',8]]},
+     cy:{count:15,spend:3159674,claims:15619934,bands:[['$400K+',1],['$300K–$400K',3],['$200K–$300K',1],['$100K–$200K',10]]},
+     aug:{spend:714671,claims:2445508,newCount:2,newSpend:530178}},
+ rebatePY:863952,rebateCY:948397,rebate12:1854535};
+
+// Performance Ratings — Annual 2025 (review period Jan 2025) and Mid-Year 2026 (Jan 1 – Jun 30, 2026) cycles; scale 0–5
+const PR={asOf:'Mid-Year 2026',
+ summary:{annual:{inReview:1417,completed:1393,pending:24,avg:3.41,median:3.25},mid:{inReview:2321,completed:2178,pending:143,avg:3.37,median:3.20}},
+ dist:[['Exceptional','4.50–5.00',121,186,'#1f9d63'],['Excelling','3.75–4.45',317,420,'#7fc8a9'],['Performing','2.75–3.70',814,1367,'#2b5fd9'],['Contributing','2.00–2.70',128,193,'#e0a100'],['Needs Development','0–1.90',13,12,'#d64545']],
+ groups:[['Hourly (BMH)',{annual:{total:903,done:897,avg:3.25,ex:51,exl:142},mid:{total:1614,done:1557,avg:3.26,ex:105,exl:230}}],['Salaried (FH7)',{annual:{total:514,done:496,avg:3.69,ex:70,exl:175},mid:{total:707,done:621,avg:3.65,ex:81,exl:190}}]]};
+const PERF_DEPT=[["ARx PS Pharmacy", 62, 60, 3.39, 135, 134, 1, 3.43], ["Account Management", 22, 21, 3.53, 34, 28, 6, 3.69], ["Allazo Technology", 7, 7, 4.26, 10, 10, 0, 3.92], ["Architecture & DevOps", 11, 11, 4.3, 12, 10, 2, 4.28], ["Business Development", 6, 6, 3.77, 8, 3, 5, null], ["Center of Excellence", 4, 4, null, 5, 3, 2, null], ["CoAssist Pharmacy", 62, 61, 3.67, 201, 200, 1, 3.57], ["Commercial Operations", 2, 1, null, 9, 0, 9, null], ["Data & Reporting", 23, 21, 3.36, 37, 25, 12, 3.12], ["Development", 48, 47, 3.82, 51, 51, 0, 3.82], ["Enterprise Data", 21, 21, 3.6, 22, 22, 0, 3.67], ["Facilities & Admin", 12, 11, 3.87, 21, 19, 2, 3.63], ["Finance", 14, 14, 3.91, 30, 19, 11, 3.82], ["Human Resources", 31, 30, 3.72, 43, 43, 0, 3.62], ["Infrastructure & Telecom", 14, 14, 4.01, 15, 15, 0, 3.92], ["Internal Systems", 21, 21, 3.23, 24, 24, 0, 3.52], ["Legal & Compliance", 12, 12, 3.4, 19, 18, 1, 3.56], ["Marketing", 7, 4, null, 11, 7, 4, 4.63], ["Patient Solutions", 922, 911, 3.28, 1490, 1407, 83, 3.24], ["Prod Support & Ops", 8, 8, 3.32, 10, 10, 0, 3.18], ["Product", 35, 35, 3.72, 48, 44, 4, 3.95], ["Project Management Org", 47, 47, 3.6, 58, 58, 0, 3.49], ["Quality & Release Mngmt", 20, 20, 3.56, 22, 22, 0, 3.65], ["Sales Operations", 6, 6, 3.21, 6, 6, 0, 3.97]];
+const PERF_RATED_DEPT=[["ARx PS Pharmacy", 134, 6, 27, 99, 2, 0], ["Account Management", 28, 2, 14, 12, 0, 0], ["Allazo Technology", 10, 3, 4, 1, 2, 0], ["Architecture & DevOps", 10, 3, 7, 0, 0, 0], ["CoAssist Pharmacy", 200, 21, 59, 110, 10, 0], ["Data & Reporting", 25, 2, 0, 19, 4, 0], ["Development", 51, 9, 22, 18, 2, 0], ["Enterprise Data", 22, 0, 9, 13, 0, 0], ["Facilities & Admin", 19, 0, 11, 7, 1, 0], ["Finance", 19, 2, 9, 8, 0, 0], ["Human Resources", 43, 6, 11, 25, 1, 0], ["Infrastructure & Telecom", 15, 3, 7, 5, 0, 0], ["Internal Systems", 24, 0, 8, 15, 1, 0], ["Legal & Compliance", 18, 1, 7, 10, 0, 0], ["Marketing", 7, 6, 0, 1, 0, 0], ["Patient Solutions", 1407, 98, 190, 940, 167, 12], ["Prod Support & Ops", 10, 0, 1, 9, 0, 0], ["Product", 44, 12, 16, 14, 2, 0], ["Project Management Org", 58, 5, 10, 42, 1, 0], ["Quality & Release Mngmt", 22, 3, 7, 12, 0, 0], ["Sales Operations", 6, 2, 0, 4, 0, 0]];
+
+// Rewards & Recognition — Companywide Recognition Programs policy + Award Winner Tracking Sheet (winners are publicly announced at town halls)
+const RR={divisions:['Technology','Orlando PS & Pharmacy','Overland Park + Tempe PS & Pharmacy','Support'],
+ programs:[['Values Award','Quarterly','Peer-to-peer; division committee finalists, all-employee vote','4 per quarter (1 per division)','Trophy, certificate, $500 gift card, 1 PTO day; nominator $50 gift card'],
+  ['Vision Award','Annual','Leadership-driven; division finalists, executive team decision','4 finalists, 1 overall winner','Trophy, certificate, $2,500 gift card, 1 PTO day; nominator $100 gift card'],
+  ['#TransformingLives Award','Quarterly','Peer-to-peer; previous division winner selects','4 per quarter (1 per division)','Traveling trophy, town hall and newsletter recognition, facility branding']],
+ values:[ // [cycle, [name, value(s)] x4 in division order]
+  ['Jun 2026',[['Zackary Baker','Teamwork'],['Jazmine Butler','Inspiration'],['Karina Diaz','Excellence'],['Rachel Weiss','Winning']]],
+  ['Mar 2026',[['Danny Calderon','Teamwork'],['Tarquaisha Smith','Excellence'],['Shaun Bell','Teamwork'],['David Bernal','Teamwork']]],
+  ['Dec 2025 (announced 2026)',[['Steven Loper','Inspiration'],['Renata Phillip','Teamwork'],["Na'Toshia Robinson",'Inspiration, Winning, Excellence, Teamwork'],['Jasmine Nedd','Excellence, Respect, Winning, Teamwork, Inspiration']]]],
+ tl:[['Jun 2026',['Alex Crittenden','Tammy Diaz','C.J. Paul','Steve Harcharran']],['Mar 2026',['Jaime Cardenas','Joise Martinez Rivera','Brandi Morris','Donna Kemper']],['Dec 2025 (announced 2026)',['Max Raes','Andrea Amezquita','Jimicca Moore','Sabrina Garcia']]],
+ vision:[['2025 (announced 2026)','Nick McMurray','Technology']],
+ valueMentions:[['Teamwork',7],['Inspiration',4],['Excellence',4],['Winning',3],['Respect',1]]};
+
+// Employee referrals — from Bonus_Awards_2026 rollup (Employee Referral Bonus line; pay dates Jan 9 – Sep 18, 2026; aggregates only)
+const REF={payments:353,uniqueEE:276,spend:316250,reversals:4,months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep'],monthlyPay:[71,25,33,18,64,43,51,36,12],monthlySpend:[72250,22000,29500,19000,55750,36250,41500,29500,10500],
+ depts:[['Patient Solutions',259,218000],['CoAssist Pharmacy',44,41250],['ARx PS Pharmacy',18,18250],['Account Management',6,9250],['Project Management',4,8250],['Data & Reporting',4,6000],['Internal Systems',3,3000],['Facilities & Admin',3,2250],['Human Resources',5,2250],['Sales Operations',2,2250],['Commercial Operations',1,2500],['Prod Support & Ops',2,1500],['Product',1,750],['Quality & Release Mngmt',1,750]],bonusTotal:9198587.67};
+
+// Recruiting funnel — new CRM (data began Aug 2026; dashboard data as of 10/26/26, applications through 10/24/26; excludes internal mobility)
+const FUN={stages:[['Applications',16307],['Screens',1140],['HM Submissions',813],['Interviews',581],['Offers',414],['Accepts',358],['Hires',334]],
+ appToHire:0.02,screenToHM:0.706,acceptRate:0.864,avgTTF:17.0,avgTTH:22.84,futureStarts:33,
+ months:[['Aug',4153],['Sep',7632],['Oct*',4522]],
+ sources:[['Not Specified',43.77],['Job Board',33],['LinkedIn',10.2],['Current Employee (label truncated)',9.46],['All other (7 channels)',3.57]],
+ status:[['Dispositioned',45],['New Submission',31],['Incomplete',12],['TA Review',7],['Hired / Hiring Manager / other',5]],
+ // org rollups by leader: [org, apps, screens, HM, interviews, offers, accepts, future starts, hires, avg time to fill, accept %]
+ orgs:[['Patient Solutions & Pharmacy org',8957,813,539,476,396,342,28,321,16.5,86.3],['Technology org',5187,189,141,19,6,5,3,3,39.5,100],['Account Mgmt / CoE / PMO org',2101,115,111,73,4,4,1,3,27.5,100],['HR org',56,17,16,7,2,1,1,1,44.0,50],['BD / Marketing / Sales Ops org',6,6,6,6,6,6,null,6,null,null]]};
+
+// Employee Relations — HR Acuity cases by tier (system launched May 2026; tier labeling began Aug 2026; refreshed 10/26/26; aggregates only)
+const ER={asOf:'10/26/26',total:2992,open:229,
+ months:['May','Jun','Jul','Aug','Sep','Oct*'],
+ t1:[2,4,17,80,258,203],t2:[0,0,0,28,33,16],t3:[1,0,0,1,2,0],un:[739,702,491,334,33,48],
+ tiers:{'Tier 1':{n:564,open:46,closed:518,within:0.695,avgDays:8.0,medDays:0},'Tier 2':{n:77,open:9,closed:68,within:0.809,avgDays:8.6,medDays:4},'Tier 3':{n:4,open:1,closed:3,avgDays:66.7,medDays:32},'Unassigned':{n:2347,open:173,closed:2174,avgDays:9.6,medDays:1}},
+ aging:[['0–7 days',34],['8–30 days',46],['31–60 days',58],['60+ days',91]],
+ groups:[['Novo Nordisk: Obesity',701,39,156,38,0],['COA Pharmacy COS',310,58,112,8,0],['Gilead Advancing Access',178,44,42,5,1],['Apellis: Syfovre',138,3,24,0,0],['NCP Pharmacy COS',118,3,13,0,0],['Novo Nordisk: Norditropin',107,6,25,5,0],['Sobi',75,0,11,2,0],['UCB: BIMZELX',69,14,16,0,0],['Contract | COA Pharmacy COS',68,2,0,0,0],['Urogen',65,4,9,10,0]],
+ groupCount:82,
+ defs:[['Tier 1','Transactional, high volume, low complexity','HR Generalist / shared queue','Resolve in 24–48 hours; case note plus template letter'],
+  ['Tier 2','Moderate complexity, requires judgment (PIPs, final warnings, repeat violations, peer conflict)','HR Business Partner','3–10 business days; fact-gathering and documented rationale'],
+  ['Tier 3','High risk / high exposure (protected class, threats, wage-hour, ethics, director+ misconduct, multi-complainant)','HR leader with Legal at intake','Formal investigation plan, structured interviews, written report']]};
+
+// Learning & Development — Facilitation: Level 1 survey results, Aug 2026 – 10/22/2026 (1–5 scale; averages, not % favorable)
+const LD={asOf:'10/22/26',
+ program:{rows:[['Aug 2026',42,4.31,4.36],['Sep 2026',37,4.42,4.53],['Oct 2026',0,null,null]],total:[79,4.36,4.44]},
+ wo:{rows:[['Aug 2026',77,4.92,4.92],['Sep 2026',84,4.80,4.80]],total:[161,4.86,4.86]}};
+
+// Professional Development — PD series L1 survey results (MS Forms exports; aggregates only, no names or emails)
+// % favorable = share of Likert-type item responses that are favorable (Agree / Strongly Agree; 4–5; Very/Extremely well; Very/Somewhat satisfied; Met/Beyond expectations)
+const PDS={
+ surveys:[
+  {name:'Leadership Starts Here',responses:51,period:'Feb – Jul 2026',fav:344,items:357,first:{fav:50,n:51,label:'Session was valuable to me as a leader'},nps:70.6,npsNote:'Strongly Agree on first question',status:'data'},
+  {name:'Professional Presence',responses:6,period:'Mar 2026',fav:24,items:24,first:{fav:6,n:6,label:'Session gave me practical tools'},nps:100,npsNote:'Rated 5 on first question',status:'data'},
+  {name:'First Class Customer Experience',responses:88,period:'Mar 2024 – Jun 2025 (historical)',fav:1215,items:1231,first:{fav:87,n:88,label:'Overall satisfaction with the course (avg 4.92)'},nps:90.9,npsNote:'0–10 likelihood to recommend: 81 promoters, 1 detractor',status:'historical'},
+  {name:'Post-Session Feedback — Professional Development',responses:168,period:'Active 207 days',status:'screenshot'},
+  {name:'Leadership in Action: Post-Session Feedback',responses:null,period:'',status:'pending'},
+  {name:'Leadership in Action: 60-Day Follow-Up',responses:null,period:'',status:'pending'}],
+ monthly:[['Feb 2026',40,274,280],['Mar 2026',7,31,31],['Apr 2026',6,35,42],['Jun 2026',1,7,7],['Jul 2026',3,21,21]]};
+
+// Academy — L&D evaluations (A2T2 end-of-course survey; each response = one learner's evaluation of one session) and class results
+const ACAD={asOf:'10/22/26',
+ evals:[['Aug 2026',99,4.74,4.77],['Sep 2026',275,4.80,4.81],['Oct 2026',192,4.78,4.81]],evalTotal:[566,4.78,4.80],
+ // [start date, enrolled, no shows, graduated, terminated]
+ hiresMarOct:458,hiresYtd:647,
+ classes:[['3/31/26',35,9,20,6],['4/27/26',40,7,23,10],['6/8/26',5,0,3,2],['8/17/26',19,1,15,4],['9/14/26',25,0,21,4],['10/5/26',70,0,66,4]]};
+
+// HRIS — project updates (status, not KPIs), as of 10/21/2026
+const HRIS={asOf:'10/21/2026',projects:[
+ ['HR Acuity','Fully Implemented','5/20/2026','End-to-end employee relations documentation, management & analytics platform'],
+ ['iCIMS','Fully Implemented','8/15/2026','Fully functional with CRM-AI tools'],
+ ['EverCheck','In Procurement','',''],
+ ['Snowflake Integration','Not Started','',''],
+ ['Career Site Landing Pages','In Progress','Q1 2027','Development pending the marketing company re-branding partnership']]};
+
+// HRIS KPIs (all Tier 1, monthly) — from the HRIS KPI overview; data status per KPI. Aggregates only
+const HK={kpis:[
+ [1,'Onboarding','New hires','Count of employees starting in period, by department, location and role','ADP onboarding export (hire date); ADP new-hire list to cross-check','Available','Sept 2026: 53 hires (ADP onboarding export)'],
+ [2,'Onboarding','Onboarding experience completion rate','External hires with onboarding status Completed in ADP onboarding report ÷ total external hires × 100','ADP onboarding task dashboard report','Available','Sept 2026: 43 of 53 completed (81%); 5 in progress, 5 not started'],
+ [3,'Onboarding','Onboarding compliance (audited profiles)','Audited new-hire profiles (E-Files) with complete background check record and onboarding documents ÷ total profiles audited × 100; also count of profiles audited','E-File spot-check audit list; ADP new-hire list','Partial','Audit list and ADP new-hire list exist; need to consolidate monthly'],
+ [4,'Onboarding','Internal move hire execution time','Average time from clear-to-start to sent-to-ADP for internal move hires (no onboarding)','iCIMS report of internal hires + ADP active roster','Gap','Need a send-to-ADP timestamp for internal moves'],
+ [5,'Term Processing','ADP termination processing','Count of term tickets sent to ADP in period','Jira HR project (ADP data entry ticket)','Available','Oct 1–20: 152 term tickets sent to ADP; 2 still open as of Oct 20'],
+ [6,'HRIS','HRIS issues resolved','Count of issues resolved in the HRIS queue in period','Jira HRIS queue dashboard (resolution time)','Available','Last 30 days (Sep 21–Oct 20): 855 issues resolved; 24 active days'],
+ [7,'HRIS','HRIS resolution time (total)','Sum of days each resolved issue was open, for issues resolved in period','Jira HRIS queue dashboard','Available','Last 30 days: 2,164 total resolution days across 855 resolved issues'],
+ [8,'HRIS','HRIS average resolution time','Total resolution time ÷ issues resolved, in days','Jira HRIS queue dashboard','Available','Last 30 days: 2.5 days average. Last 7 days (Oct 14–20): 3.7 days; Sep 21–Oct 13: 2.2 days'],
+ [9,'Data Integrity (ADP)','Data entry error rate','ADP entries corrected after submission ÷ total entries × 100','iCIMS report for all new hires vs census report from ADP','Gap','Match ADP census report against iCIMS onboarding/hires report'],
+ [10,'Data Integrity (ADP)','ADP spot-check pass rate','Audited ADP changes (hires, terms, status changes) that pass ÷ total audited × 100','Audit log (case, date, status: pass/fail)','Partial','No audits logged yet (audit in 3rd week of each month; report at month end)'],
+ [14,'HR Compliance','VerifyComply monthly census compliance rate','Successful monthly cycles YTD ÷ total months YTD × 100; a cycle succeeds when the census is uploaded before the 6th and cases are reviewed/closed by the 10th','VerifyComply log report','Partial','No months logged yet; enter dates from the VerifyComply log report']]};
+
+// Workforce demographics — employees only (contractors excluded), as of 10/1/26; groups under 5 are combined to protect privacy
+const DEM={asOf:'10/1/26',total:2712,
+ gender:[['Female',2048],['Male',646],['Non-binary / Unknown',18]],
+ ethnicity:[['Black / African American',1009],['White',673],['Hispanic / Latino',625],['Two or More Races',225],['Asian',152],['American Indian / Alaska Native',9],['Native Hawaiian / Pacific Islander / Unknown',19]],
+ age:[['<30',587],['30–39',1020],['40–49',619],['50+',486]],avgAge:38.7,
+ generations:[['Gen Z',493],['Millennials',1460],['Gen X',660],['Baby Boomers',99]],
+ leadership:{women:62,total:122},poc:2022};
+
+// HR Analytics builds, March 2026 – present
+const HAB={asOf:'Oct 2026',items:[
+ ['HR Hive App','Tool','HR and non-HR','Active','Centralized location for all analytic dashboards and tools for HR and non-HR customers'],
+ ['Workforce Insights Dashboard','Dashboard','HR','Active','Headcount, turnover, and open requisition data and insights'],
+ ['Automated Weekly HR Summary Deck','Automated report','HR','Active','Automated production of weekly turnover and hiring metrics'],
+ ['Open Requisition Dashboard','Dashboard','HR and Finance','Active','Current open requisitions'],
+ ['Weekly Billable Staffing Update','Automated report','HR and Finance','Active','Created by recruiting for weekly report-outs of billable reqs'],
+ ['Weekly Non-Billable Staffing Update','Automated report','HR and Finance','Active','Created by recruiting for weekly report-outs of non-billable reqs'],
+ ['Org Diagnostic Tool','Tool','HR','Active','Organization health: headcount, turnover, hiring, spans and layers, workforce demographics, compensation, 9 box, top talent and key roles'],
+ ['Succession Planning Tool','Tool','Business','Active','Manage succession planning activities'],
+ ['Succession Planning Dashboard','Dashboard','HR','Active','Succession planning results and metrics'],
+ ['Talent Review 9 Box Tool','Tool','Business','Active','Employee assessment and 9 box placement; results captured in the Org Diagnostic Tool'],
+ ['Leave Management Dashboard','Dashboard','HR','Active','Measure and report on leave administration activities'],
+ ['Funnel Dashboard','Dashboard','HR','Active','Recruiting funnel data and metrics'],
+ ['HR KPI Dashboard','Dashboard','CHRO','Active','Single dashboard for all HR COE KPIs'],
+ ['Mobility Dashboard','Dashboard','','In development','Build in progress'],
+ ['HRIS Audit Dashboard','Dashboard','','In development','Build in progress'],
+ ['Weekly Terminations Dashboard','Dashboard','','In development','Build in progress'],
+ ['Leader Dashboard','Dashboard','','In development','Build in progress']]};
+
+// Compensation — from the Org Diagnostic tool (EmployeeDetails, data date 9/29/2026; employees only). Compa ratio = base ÷ band midpoint; target range 0.90–1.10 (tool benchmark)
+const COMP={asOf:'9/29/2026',employees:2712,withCR:2563,avgCR:1.002,medianCR:0.991,avgBase:69930,medianBase:51487,
+ within:2020,below:248,above:295,noMid:149,
+ buckets:[['<0.80',29],['0.80–0.84',36],['0.85–0.89',183],['0.90–0.94',434],['0.95–0.99',700],['1.00–1.04',636],['1.05–1.09',249],['1.10+',296]],
+ // [group, employees, with compa ratio, avg compa, avg base, below, above]
+ levels:[['Support',1863,1833,0.999,49697,145,168],['Professional',446,401,1.015,106767,59,72],['Manager / Supervisor',271,237,0.974,88129,30,25],['Director',89,66,1.031,158437,13,17],['VP and above',43,26,1.187,null,1,13]]};
+
+// Contractor spend — Finance actual spend from the Contractors Monthly Report (Sep 2026 month-end) vs the weekly contractor view (weeks ending Oct 2 – Oct 20, 2026)
+const CON={asOf:'Sep 2026',weeks:['Oct 2','Oct 9','Oct 16','Oct 20'],
+ total:{sepFTE:202.9,sepSpend:18.9,wkFTE:181.8,wkSpend:15.3},
+ // [department, Sep actual FTE, forecast (weekly view) FTE, Sep actual annualized $M, forecast annualized $M]
+ depts:[['Development',77.1,70.6,7.1,6.1],['Quality & Release Mngmt',47.4,46.9,3.0,3.1],['Data & Reporting',20.0,17.4,2.5,1.7],['Project Management Org',18.2,16.1,3.1,2.4],['Enterprise Data',18.3,19.2,1.6,1.6],['Product',8.0,7.7,0.2,0.2],['Allazo Technology',11.9,2.1,0.9,0.2],['Business Development',1.0,1.0,0.2,0.2],['Architecture & DevOps',0.9,0.9,0.1,0.1],['Prod Support & Ops',0,0,0,0]]};
+// Eligible headcount (interim figure; more detail to come)
+const ELIG={asOf:'8/31/26',headcount:2751};
+
+/* ============================================================
+   Helpers
+   ============================================================ */
+const $=s=>document.querySelector(s);
+const fmt={n:v=>v==null?'—':Math.round(v).toLocaleString(),
+  usd:v=>v==null?'—':'$'+Math.round(v).toLocaleString(),
+  pct:v=>v==null?'—':(v*100).toFixed(1).replace(/\.0$/,'')+'%',
+  d1:v=>v==null?'—':v.toFixed(1)};
+const BADGE={sta:['trk','Status'],kpi:['kpi','KPI'],prop:['prop','Proposed KPI'],trk:['trk','Tracking'],ph:['ph','Awaiting data']};
+const last=a=>a[a.length-1];
+const sum=a=>a.reduce((x,y)=>x+y,0);
+
+// status: only when target set. dir 'up' = higher is better
+function rag(val,t){ if(val==null||!t) return null;
+  const up=t.dir!=='down'; const ok=up?val>=t.green:val<=t.green; if(ok) return 'var(--g)';
+  const mid=up?val>=t.yellow:val<=t.yellow; return mid?'var(--y)':'var(--r)'; }
+
+function card(c){
+  const b=BADGE[c.type||'trk'];
+  const na=c.value==null;
+  const col=rag(c.raw,c.target);
+  return `<div class="card"><div class="lab"><span>${col?`<span class="dot" style="background:${col}"></span>`:''}${c.label}</span><span class="b ${b[0]}">${b[1]}</span></div>
+  <div class="val ${na?'na':''}">${na?'No data yet':c.value}</div>
+  <div class="s">${c.sub||'&nbsp;'}</div>${c.target?`<div class="tgt">Target: ${c.target.label}</div>`:''}</div>`;
+}
+const cards=a=>`<div class="grid">${a.map(card).join('')}</div>`;
+
+/* SVG charts */
+function lineChart(labels,series,{h=190,f=fmt.n,colors=['#2b5fd9','#e0a100','#1f9d63','#d64545']}={}){
+  const W=520,H=h,p={l:48,r:12,t:12,b:26};
+  const all=series.flatMap(s=>s.data.filter(x=>x!=null)); const max=Math.max(...all)*1.1||1;
+  const x=i=>p.l+(W-p.l-p.r)*(labels.length<2?.5:i/(labels.length-1));
+  const y=v=>H-p.b-(H-p.t-p.b)*v/max;
+  let g='';
+  for(let k=0;k<=4;k++){const v=max*k/4;g+=`<line x1="${p.l}" x2="${W-p.r}" y1="${y(v)}" y2="${y(v)}" stroke="#e8ebf0"/><text x="${p.l-6}" y="${y(v)+3}" font-size="10" fill="#6b7686" text-anchor="end">${f(v)}</text>`}
+  labels.forEach((l,i)=>g+=`<text x="${x(i)}" y="${H-8}" font-size="10" fill="#6b7686" text-anchor="middle">${l}</text>`);
+  series.forEach((s,si)=>{const pts=s.data.map((v,i)=>v==null?null:[x(i),y(v)]).filter(Boolean);
+    g+=`<polyline fill="none" stroke="${colors[si]}" stroke-width="2.2" points="${pts.map(q=>q.join(',')).join(' ')}"/>`+pts.map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="2.8" fill="${colors[si]}"/>`).join('');
+    const lp=last(pts); if(lp) g+=`<text x="${lp[0]}" y="${lp[1]-7}" font-size="10" font-weight="700" fill="${colors[si]}" text-anchor="end">${f(last(s.data))}</text>`});
+  const lg=series.length>1?`<div class="legend">${series.map((s,i)=>`<span><span class="dot" style="background:${colors[i]}"></span>${s.name}</span>`).join('')}</div>`:'';
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%">${g}</svg>${lg}`;
+}
+function barChart(labels,data,{h=190,f=fmt.n,color='#2b5fd9'}={}){
+  const W=520,H=h,p={l:48,r:12,t:16,b:26}; const max=Math.max(...data)*1.15||1;
+  const bw=(W-p.l-p.r)/labels.length; const y=v=>H-p.b-(H-p.t-p.b)*v/max; let g='';
+  for(let k=0;k<=4;k++){const v=max*k/4;g+=`<line x1="${p.l}" x2="${W-p.r}" y1="${y(v)}" y2="${y(v)}" stroke="#e8ebf0"/><text x="${p.l-6}" y="${y(v)+3}" font-size="10" fill="#6b7686" text-anchor="end">${f(v)}</text>`}
+  data.forEach((v,i)=>{const bx=p.l+i*bw+bw*.15;g+=`<rect x="${bx}" y="${y(v)}" width="${bw*.7}" height="${H-p.b-y(v)}" rx="3" fill="${color}"/><text x="${bx+bw*.35}" y="${y(v)-4}" font-size="10" fill="#1c2430" text-anchor="middle">${f(v)}</text><text x="${bx+bw*.35}" y="${H-8}" font-size="10" fill="#6b7686" text-anchor="middle">${labels[i]}</text>`});
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%">${g}</svg>`;
+}
+
+function divBarChart(labels,data,{h=190,f=v=>Math.round(v)}={}){
+  const W=520,H=h,p={l:48,r:12,t:16,b:26}; const mx=Math.max(...data.map(Math.abs))*1.15||1;
+  const y=v=>p.t+(H-p.t-p.b)*(1-(v+mx)/(2*mx)); const bw=(W-p.l-p.r)/labels.length; let g='';
+  [-mx,0,mx].forEach(v=>g+=`<line x1="${p.l}" x2="${W-p.r}" y1="${y(v)}" y2="${y(v)}" stroke="${v===0?'#9aa4b2':'#e8ebf0'}"/><text x="${p.l-6}" y="${y(v)+3}" font-size="10" fill="#6b7686" text-anchor="end">${f(v)}</text>`);
+  data.forEach((v,i)=>{const bx=p.l+i*bw+bw*.15,y0=y(0),y1=y(v);g+=`<rect x="${bx}" y="${Math.min(y0,y1)}" width="${bw*.7}" height="${Math.abs(y1-y0)}" rx="3" fill="${v<0?'#d64545':'#1f9d63'}"/><text x="${bx+bw*.35}" y="${v<0?y1+11:y1-4}" font-size="9" fill="#1c2430" text-anchor="middle">${f(v)}</text><text x="${bx+bw*.35}" y="${H-8}" font-size="10" fill="#6b7686" text-anchor="middle">${labels[i]}</text>`});
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%">${g}</svg>`;
+}
+
+function stackBarChart(labels,series,{h=200}={}){
+  const W=520,H=h,p={l:48,r:12,t:12,b:26}; const tot=labels.map((_,i)=>series.reduce((a,x)=>a+x.data[i],0)); const max=Math.max(...tot)*1.12||1;
+  const bw=(W-p.l-p.r)/labels.length; const y=v=>H-p.b-(H-p.t-p.b)*v/max; let g='';
+  for(let k=0;k<=4;k++){const v=max*k/4;g+=`<line x1="${p.l}" x2="${W-p.r}" y1="${y(v)}" y2="${y(v)}" stroke="#e8ebf0"/><text x="${p.l-6}" y="${y(v)+3}" font-size="10" fill="#6b7686" text-anchor="end">${Math.round(v)}</text>`}
+  labels.forEach((l,i)=>{let acc=0;const bx=p.l+i*bw+bw*.15;series.forEach(x=>{const v=x.data[i];if(v>0){g+=`<rect x="${bx}" y="${y(acc+v)}" width="${bw*.7}" height="${y(acc)-y(acc+v)}" fill="${x.color}"/>`;acc+=v}});
+    g+=`<text x="${bx+bw*.35}" y="${y(tot[i])-4}" font-size="10" fill="#1c2430" text-anchor="middle">${tot[i]}</text><text x="${bx+bw*.35}" y="${H-8}" font-size="10" fill="#6b7686" text-anchor="middle">${l}</text>`});
+  const lg=`<div class="legend">${series.map(x=>`<span><span class="dot" style="background:${x.color}"></span>${x.name}</span>`).join('')}</div>`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%">${g}</svg>${lg}`;
+}
+function hBars(rows,total){ // rows [label,value,color]
+  return rows.map(r=>`<div style="margin:9px 0"><div style="display:flex;justify-content:space-between;font-size:12px"><span>${r[0]}</span><span><b>${r[1]}</b> <span style="color:var(--mut)">(${fmt.pct(r[1]/total)})</span></span></div><div class="bar" style="height:9px"><i style="width:${r[1]/total*100}%;background:${r[2]}"></i></div></div>`).join('');
+}
+const chartCard=(t,n,svg)=>`<div class="card chartcard"><h3>${t}</h3><div class="note">${n||''}</div>${svg}</div>`;
+const placeholder=(t,items)=>`<div class="ph-box"><b>${t}</b><div style="margin-top:6px;font-size:12px">${items||'Awaiting data'}</div></div>`;
+
+/* ============================================================
+   Derived metrics
+   ============================================================ */
+const gm=HY.products['General Medicine']; const n=HY.months.length-1;
+const gmUtil=gm.v.map((v,i)=>v/HY.registered[i]*100);   // visits per 100 registered
+const gmSavPerVisit=gm.s.map((s,i)=>s/gm.v[i]);
+const gmMonthly=gm.v.map((v,i)=>i?v-gm.v[i-1]:v);
+const totVisits=HY.months.map((_,i)=>sum(Object.values(HY.products).map(p=>p.v[i])));
+const totSav=HY.months.map((_,i)=>sum(Object.values(HY.products).map(p=>p.s[i])));
+const adaTotal=ADA.active+ADA.noPaper+ADA.completed+ADA.inactive+ADA.declined+ADA.canceled;
+const adaNoPaperRate=ADA.noPaper/adaTotal;
+const adaGrantRate=ADA.completed/(ADA.completed+ADA.declined);
+
+const K={
+ gmUtil:{label:'General Medicine Utilization (visits per 100 registered)',value:fmt.d1(gmUtil[n]),raw:gmUtil[n],type:'kpi',sub:`${fmt.n(gm.v[n])} YTD visits · ${fmt.n(HY.registered[n])} registered (${HY.months[n]})`},
+ regRate:{label:'HealthiestYou Registration Rate',value:fmt.pct(HY.registered[n]/ELIG.headcount),raw:HY.registered[n]/ELIG.headcount,type:'kpi',sub:`${fmt.n(HY.registered[n])} registered ÷ ${fmt.n(ELIG.headcount)} eligible (${ELIG.asOf})`},
+ gmSav:{label:'General Medicine Net Savings (YTD)',value:fmt.usd(gm.s[n]),type:'kpi',sub:`${fmt.usd(gmSavPerVisit[n])} net savings per visit · through ${HY.months[n]}`},
+ reg:{label:'HealthiestYou Registered Members',value:fmt.n(HY.registered[n]),type:'trk',sub:`+${fmt.n(HY.registered[n]-HY.registered[0])} since Jan`},
+ part:{label:'401(k) Participation Rate',value:fmt.pct(FIN.participation),raw:FIN.participation,type:'kpi',sub:`As of ${FIN.asOf} · ${FIN.prior}: ${fmt.pct(FIN.may.participation)} (${finPts(FIN.sep.participation,FIN.may.participation)})`},
+ contrib:{label:'401(k) Avg Contribution % (Avg Deferral Election)',value:fmt.pct(FIN.avgContrib),type:'kpi',sub:`As of ${FIN.asOf} · ${FIN.prior}: ${fmt.pct(FIN.may.deferral)} (${finPts(FIN.sep.deferral,FIN.may.deferral)})`},
+ loans:{label:'Loans & Withdrawals',value:fmt.pct(FIN.loans),type:'trk',sub:`Reported as a % · ${FIN.prior}: ${fmt.pct(FIN.may.loans)} (${finPts(FIN.sep.loans,FIN.may.loans)}) · count not provided`},
+ adaNP:{label:'ADA Paperwork Non-Return Rate',value:fmt.pct(adaNoPaperRate),raw:adaNoPaperRate,type:'trk',sub:`${ADA.noPaper} of ${adaTotal} cases declined for no paperwork`},
+ adaTot:{label:'ADA Cases (YTD)',value:fmt.n(adaTotal),type:'trk',sub:`${ADA.active} currently active`},
+ adaGrant:{label:'ADA Accommodation Completion Rate',value:fmt.pct(adaGrantRate),type:'trk',sub:`${fmt.n(adaTotal)} total cases · ${ADA.active} currently active`},
+ wcClaims:{label:'Workers Comp: # Claims (YTD)',value:fmt.n(wcYtd.claims),type:'kpi',sub:`Jan–${MONTHS[+WC.months[WC.months.length-1].slice(5)-1]} 2026 · ${wcYtd.closed} closed · ${wcYtd.claims-wcYtd.closed} open`},
+ wcDays:{label:'Workers Comp: Missed Work Days',value:WC.missedDays==null?null:fmt.n(WC.missedDays),type:'kpi',sub:'Not yet provided'},
+ wcCost:{label:'Workers Comp: Cost of Claims (YTD)',value:fmt.usd(wcYtd.cost),type:'kpi',sub:`Jan–${MONTHS[+WC.months[WC.months.length-1].slice(5)-1]} 2026 · ${fmt.usd(wcYtd.cost/wcYtd.claims)} avg per claim`}
+};
+
+/* ============================================================
+   Pages
+   ============================================================ */
+const PAGES=[
+ {id:'ops',name:'Operations',subs:['Workforce Analytics','HRIS','HR Operations']},
+ {id:'rewards',name:'Total Rewards',subs:['Benefits','Wellness','Leaves','Compensation & Bonus','Rewards & Recognition']},
+ {id:'talent',name:'Talent Management',subs:['Talent Acquisition','Learning & Development','Employee Relations','Talent','Performance','Redeployments']},
+ {id:'culture',name:'Engagement & Culture',subs:['Engagement Survey','ERGs','HR Events']}
+];
+let state={page:'ops',sub:{rewards:0,talent:0,ops:0,culture:0}};
+
+const COE=[
+ {id:'rewards',name:'Total Rewards',topics:[['Benefits',1],['Health Wellness',1],['Financial Wellness',1],['ADA',1],['Workers Comp',.5],['Leave Administration',1],['Compensation',1],['Bonus Spend',1],['Rewards & Recognition',.5]]},
+ {id:'talent',name:'Talent Management',topics:[['Performance Mgmt',1],['Recruiting',1],['Glassdoor',1],['Employee Relations',1],['L&D',1],['Talent Review',1],['Succession Planning',1],['Redeployments',1]]},
+ {id:'ops',name:'Operations',topics:[['Workforce Analytics',.5],['HRIS',.5],['HR Operations',.5]]},
+ {id:'culture',name:'Engagement & Culture',topics:[['Engagement Survey',1],['ERGs',1],['HR Events',0]]}
+];
+
+function overview(){
+  const cov=c=>{const t=c.topics.length;const d=sum(c.topics.map(x=>x[1]));return[d,t]};
+  return `<h2>Total Rewards</h2><p class="note">Latest available values. Status colors appear only where a target has been set.</p>
+  <h2 style="font-size:13px;color:var(--mut)">Benefits</h2>`+cards((()=>{const c=benefitsK().cards;return [c.emp,c.pytd,c.pepm,c.large]})())+
+  `<h2 style="font-size:13px;color:var(--mut)">Health Wellness</h2>`+cards([K.regRate,K.gmSav])+
+  `<h2 style="font-size:13px;color:var(--mut)">Financial Wellness</h2>`+cards([K.part,K.contrib])+
+  `<h2 style="font-size:13px;color:var(--mut)">Other Wellness</h2>`+cards([K.adaTot,K.adaGrant,K.wcClaims,K.wcCost])+
+  `<h2>Other Centers of Excellence</h2><p class="note">More data to come. Click a COE to open its page. Coverage = topics with data loaded.</p>
+  <div class="grid">${COE.map(c=>{const[d,t]=cov(c);return `<div class="card coe" onclick="go('${c.id}')"><h3>${c.name}</h3>
+   <div class="s">${d} of ${t} topics reporting</div><div class="bar"><i style="width:${d/t*100}%"></i></div>
+   <div class="s">${c.topics.map(x=>`<span style="color:${x[1]===1?'var(--g)':x[1]?'var(--y)':'#b4bcc9'}">●</span> ${x[0]}`).join(' &nbsp; ')}</div></div>`}).join('')}</div>
+  <div class="legend" style="margin-top:12px"><span><span class="b kpi">KPI</span> official KPI</span><span><span class="b prop">Proposed KPI</span> suggested from data, pending your approval</span><span><span class="b trk">Tracking</span> data without an official KPI</span><span><span class="b ph">Awaiting data</span> placeholder</span></div>`;
+}
+
+function benefitsDeep(){
+  const prods=Object.keys(HY.products);
+  const rows=prods.map(p=>{const d=HY.products[p];return `<tr><td>${p}</td><td>${fmt.n(d.v[n])}</td><td>${fmt.d1(d.v[n]/HY.registered[n]*100)}</td><td>${fmt.usd(d.s[n])}</td><td>${fmt.usd(d.s[n]/d.v[n])}</td></tr>`}).join('');
+  const names=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
+  return `<h2>Health Wellness — HealthiestYou</h2><p class="note">YTD through ${HY.months[n]} 2026 · primary focus: General Medicine · registration rate uses interim eligible headcount (${fmt.n(ELIG.headcount)} at ${ELIG.asOf})</p>`+
+  cards([K.regRate,K.gmSav,K.gmUtil,K.reg,{label:'All Products Net Savings (YTD)',value:fmt.usd(totSav[n]),type:'trk',sub:`${fmt.n(totVisits[n])} total YTD visits`}])+
+  `<div class="grid2" style="margin-top:12px">
+   ${chartCard('General Medicine: YTD Net Savings','Cumulative $',lineChart(HY.months,[{name:'Net savings',data:gm.s}],{f:v=>'$'+Math.round(v/1000)+'K'}))}
+   ${chartCard('General Medicine: Utilization','Visits per 100 registered, cumulative YTD',lineChart(HY.months,[{name:'Util',data:gmUtil}],{f:fmt.d1}))}
+   ${chartCard('General Medicine: YTD Visits','Cumulative',lineChart(HY.months,[{name:'Visits',data:gm.v}]))}
+   ${chartCard('General Medicine: Monthly Visits','Derived from YTD cumulative',barChart(names,gmMonthly))}
+   ${chartCard('Net Savings YTD by Product','Cumulative $',lineChart(HY.months,prods.map(p=>({name:p,data:HY.products[p].s})),{f:v=>'$'+Math.round(v/1000)+'K'}))}
+   ${chartCard('Registered Members','Month-end',lineChart(HY.months,[{name:'Registered',data:HY.registered}]))}
+   ${chartCard('YTD Visits by Product','Cumulative',lineChart(HY.months,prods.map(p=>({name:p,data:HY.products[p].v}))))}</div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">Product Detail — YTD through ${HY.months[n]}</h3><table><tr><th>Product</th><th>YTD Visits</th><th>Visits / 100 Reg.</th><th>YTD Net Savings</th><th>Savings / Visit</th></tr>${rows}</table></div>
+
+  <h2>Financial Wellness — 401(k)</h2><p class="note">${FIN.prior} vs ${FIN.asOf} snapshots</p>`+
+  cards([K.part,K.contrib,K.loans,
+   {label:'Savings Rate',value:fmt.pct(FIN.sep.savings),type:'trk',sub:`Industry average ${fmt.pct(FIN.industrySavings)} · ${FIN.prior}: ${fmt.pct(FIN.may.savings)}`},
+   {label:'Active Employees Contributing',value:fmt.n(FIN.sep.contributing),type:'trk',sub:`${FIN.prior}: ${fmt.n(FIN.may.contributing)} (+${fmt.n(FIN.sep.contributing-FIN.may.contributing)})`},
+   {label:'Participants Receiving Full Match',value:fmt.pct(FIN.sep.fullMatch/(FIN.sep.fullMatch+FIN.sep.noMatch)),type:'trk',sub:`${fmt.n(FIN.sep.fullMatch)} of ${fmt.n(FIN.sep.fullMatch+FIN.sep.noMatch)} · ${FIN.prior}: ${fmt.pct(FIN.may.fullMatch/(FIN.may.fullMatch+FIN.may.noMatch))}`},
+   {label:'Planning & Advice Engagement',value:fmt.pct(FIN.sep.planning),type:'trk',sub:`${FIN.prior}: ${fmt.pct(FIN.may.planning)} · unchanged`}])+
+  `<div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">401(k) Snapshot Comparison</h3><table><tr><th>Metric</th><th>${FIN.prior}</th><th>${FIN.asOf}</th><th>Change</th></tr>
+   <tr><td>Savings rate (industry avg ${fmt.pct(FIN.industrySavings)})</td><td>${fmt.pct(FIN.may.savings)}</td><td>${fmt.pct(FIN.sep.savings)}</td><td>${finPts(FIN.sep.savings,FIN.may.savings)}</td></tr>
+   <tr><td>Average deferral election</td><td>${(FIN.may.deferral*100).toFixed(2)}%</td><td>${(FIN.sep.deferral*100).toFixed(2)}%</td><td>${finPts(FIN.sep.deferral,FIN.may.deferral)}</td></tr>
+   <tr><td>Active employees contributing</td><td>${fmt.n(FIN.may.contributing)}</td><td>${fmt.n(FIN.sep.contributing)}</td><td>+${fmt.n(FIN.sep.contributing-FIN.may.contributing)}</td></tr>
+   <tr><td>% of active employees contributing</td><td>${fmt.pct(FIN.may.participation)}</td><td>${fmt.pct(FIN.sep.participation)}</td><td>${finPts(FIN.sep.participation,FIN.may.participation)}</td></tr>
+   <tr><td>Loans &amp; withdrawals (%)</td><td>${fmt.pct(FIN.may.loans)}</td><td>${fmt.pct(FIN.sep.loans)}</td><td>${finPts(FIN.sep.loans,FIN.may.loans)}</td></tr>
+   <tr><td>Participants receiving full match</td><td>${fmt.n(FIN.may.fullMatch)}</td><td>${fmt.n(FIN.sep.fullMatch)}</td><td>+${fmt.n(FIN.sep.fullMatch-FIN.may.fullMatch)}</td></tr>
+   <tr><td>Participants not receiving full match</td><td>${fmt.n(FIN.may.noMatch)}</td><td>${fmt.n(FIN.sep.noMatch)}</td><td>+${fmt.n(FIN.sep.noMatch-FIN.may.noMatch)}</td></tr>
+   <tr><td>Planning &amp; advice engagement</td><td>${fmt.pct(FIN.may.planning)}</td><td>${fmt.pct(FIN.sep.planning)}</td><td>0 pts</td></tr></table>
+   <ul class="m"><li>Participation rose as enrollment grew, but the share of participants not receiving the full match increased from ${fmt.pct(FIN.may.noMatch/(FIN.may.fullMatch+FIN.may.noMatch))} to ${fmt.pct(FIN.sep.noMatch/(FIN.sep.fullMatch+FIN.sep.noMatch))}, and loans &amp; withdrawals rose 5 points.</li><li>Receiving + not receiving full match (${fmt.n(FIN.sep.fullMatch+FIN.sep.noMatch)}) differs slightly from active employees contributing (${fmt.n(FIN.sep.contributing)}); the vendor's participant definition may differ.</li></ul></div>`+
+
+  `<h2>ADA Accommodations</h2><p class="note">YTD as of ${ADA.asOf}</p>
+  <div class="flag"><b>Status definitions:</b> <b>Active</b> – accommodation in place. <b>Declined (no paperwork)</b> – employee did not return required paperwork. <b>Completed</b> – accommodation no longer needed (e.g., lactation room). <b>Inactive</b> – employee terminated, so accommodation no longer in effect. <b>Declined</b> – company declined (e.g., unrealistic request). <b>Canceled</b> – employee withdrew the request. Total of 359 cases confirmed. <b>Assumption:</b> "Completion Rate" is Completed ÷ (Completed + Declined); because Completed means the need ended rather than "granted", please confirm this is the intended measure.</div>`+
+  cards([K.adaGrant,K.adaTot,K.adaNP])+
+  `<div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Case Status Breakdown</h3><div class="note">${fmt.n(adaTotal)} total cases YTD</div>${hBars([['Declined (no paperwork)',ADA.noPaper,'#e0a100'],['Active',ADA.active,'#2b5fd9'],['Completed',ADA.completed,'#1f9d63'],['Inactive',ADA.inactive,'#8a94a6'],['Declined',ADA.declined,'#d64545'],['Canceled',ADA.canceled,'#b4bcc9']],adaTotal)}</div>
+  <div class="card chartcard"><h3>Prior-Year / Trend</h3><div class="note">Add historical YTD values or monthly snapshots when available</div>${placeholder('No history yet','Trend charts will appear once a second data point is loaded')}</div></div>`+
+
+  `<h2>Workers Compensation</h2><p class="note">Monthly values through ${WC.asOf} · missed work days to be provided · Oct 2026 not yet reported</p>
+  <div class="flag">Values look monthly (not cumulative). Jan–Mar 2026 show 2 claims each month; if these are the same two claims carried forward, YTD claims would be lower. Please confirm how claims are counted.</div>`+cards([K.wcClaims,K.wcDays,K.wcCost])+
+  `<div class="grid2" style="margin-top:12px">${chartCard('Claims by Month','Jun 2025 – Sep 2026',barChart(wcLbl,WC.claims))}${chartCard('Cost of Claims by Month','Jun 2025 – Sep 2026',barChart(wcLbl,WC.cost,{f:v=>'$'+(v>=1000?Math.round(v/1000)+'K':Math.round(v)),color:'#e0a100'}))}</div>`;
+}
+
+
+function opsPage(){
+  const A=AUDIT, pct=A.completed/A.total;
+  const fd=x=>{const t=new Date(x+'T00:00:00');return MONTHS[t.getMonth()]+' '+t.getDate()};
+  // weekly totals (Mon start)
+  const wk={};A.daily.forEach(([dt,c])=>{const t=new Date(dt+'T00:00:00');const m=new Date(t);m.setDate(t.getDate()-((t.getDay()+6)%7));const k=MONTHS[m.getMonth()]+' '+m.getDate();wk[k]=(wk[k]||0)+c});
+  const wl=Object.keys(wk), wv=wl.map(k=>wk[k]);
+  const ac=[
+   {label:'Employment File Audit Completion',value:fmt.pct(pct),type:'prop',sub:`${fmt.n(A.completed)} of ${fmt.n(A.total)} employee files reviewed`},
+   {label:'Files Remaining',value:fmt.n(A.remaining),type:'trk',sub:`As of ${fd(A.asOf)}`},
+   {label:'Review Pace (rolling 5 workdays)',value:fmt.d1(A.rolling5)+' / day',type:'trk',sub:`Required: ${A.requiredDaily} / day`},
+   {label:'Projected Completion',value:fd(A.projected),type:'trk',sub:`Due ${fd(A.due)} · tracker status: ${A.trackerStatus}`}];
+  const S=POL.status, applicable=sum(Object.values(S))-S['N/A'], pc=S.Complete/applicable;
+  const pcards=[
+   {label:'Policy Documentation Completion',value:fmt.pct(pc),type:'prop',sub:`${S.Complete} of ${applicable} applicable policies complete`},
+   {label:'In Progress / Needs Update',value:fmt.n(S['In Progress']+S['Needs Update']),type:'trk',sub:`${S['In Progress']} in progress · ${S['Needs Update']} needs update`},
+   {label:'Not Started / Status Not Set',value:fmt.n(S['Not Started']+S['Status not set']),type:'trk',sub:`${S['Not Started']} not started · ${S['Status not set']} no status`}];
+  const catRows=POL.rows.map(r=>{const tot=r[0]==='HR Compliance & Governance'?r[1]-1:r[1];return `<tr><td>${r[0]}</td><td>${r[2]}</td><td>${tot}</td><td>${fmt.pct(r[2]/tot)}</td></tr>`}).join('');
+  const sc={'Not Started':'#d64545','In Progress':'#e0a100','Needs Update':'#e0a100','Status not set':'#8a94a6'};
+  const gapRows=POL.gaps.map(g=>`<tr><td>${g[0]}</td><td style="text-align:left">${g[1]}</td><td><span class="dot" style="background:${sc[g[2]]}"></span>${g[2]}</td></tr>`).join('');
+  return `<h2>Audits — Employment Files</h2><p class="note">Source: Reviewer Tracker · as of ${fd(A.asOf)} · aggregate counts only</p>
+  <div class="flag"><b>Proposed KPI:</b> Audit completion % = files reviewed ÷ total employee files. Review pace, projected finish, and the tracker's deadline status are shown as Tracking. <b>To confirm:</b> the tracker header says the deadline is Dec 31, 2026, but the calculation tab (and the 7.68/day required pace) uses Nov 25, 2026. The dashboard uses Nov 25. Also, the tracker's cumulative column doesn't tie to its daily counts in a few places (daily counts sum to 2,647 vs 2,650 completed).</div>`+cards(ac)+
+  `<div class="grid2" style="margin-top:12px">${chartCard('Files Reviewed per Week','Week starting (Mon) · current week is partial',barChart(wl,wv))}
+   <div class="card chartcard"><h3>Audit Progress</h3><div class="note">${fmt.n(A.completed)} reviewed · ${fmt.n(A.remaining)} remaining</div>${hBars([['Reviewed',A.completed,'#1f9d63'],['Remaining',A.remaining,'#d64545']],A.total)}</div></div>
+  <h2>Audits — HR Policy Documentation</h2><p class="note">Source: HR Policies Checklist 5.1 · ${S.Complete+S['In Progress']+S['Not Started']+S['Needs Update']+S['Status not set']+S['N/A']} policies (HIPAA marked N/A and excluded from the rate)</p>
+  <div class="flag"><b>Proposed KPI:</b> Policy documentation completion % = Complete ÷ applicable policies. Counts were recomputed from the policy rows: the checklist header shows 14 complete, but 19 policies are marked Complete. Two Training & Development policies have no status.</div>`+cards(pcards)+
+  `<div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Status Mix</h3><div class="note">${applicable} applicable policies</div>${hBars([['Complete',S.Complete,'#1f9d63'],['In Progress',S['In Progress'],'#e0a100'],['Needs Update',S['Needs Update'],'#f0c24b'],['Not Started',S['Not Started'],'#d64545'],['Status not set',S['Status not set'],'#8a94a6']],applicable)}</div>
+   <div class="card chartcard"><h3>Completion by Category</h3><div class="note">Complete / applicable</div><table><tr><th>Category</th><th>Complete</th><th>Total</th><th>%</th></tr>${catRows}</table></div></div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">Open Policies (${POL.gaps.length})</h3><table><tr><th>Policy</th><th style="text-align:left">Category</th><th>Status</th></tr>${gapRows}</table></div>
+  <h2>RFP Requests</h2>`+placeholder('Awaiting data','Volume · Turnaround time')+
+  `<p class="note" style="margin-top:12px">More HR Operations data sets to come.</p>`;
+}
+
+
+function talentPage(){
+  const T=TR,U=SUC;
+  const tcards=[
+   {label:'Talent Review Rating Coverage (Director & above)',value:fmt.pct(T.dirPlusRated/T.dirPlus),type:'prop',sub:`${T.dirPlusRated} of ${T.dirPlus} Director+ have performance & potential rated`},
+   {label:'Key Roles Held by Top Talent',value:fmt.pct(T.keyRolesTopTalent/T.keyRoles),type:'prop',sub:`${T.keyRolesTopTalent} of ${T.keyRoles} key-role holders are top talent`},
+   {label:'Top Talent',value:fmt.n(T.topTalent),type:'trk',sub:`${fmt.pct(T.topTalent/T.rated)} of ${T.rated} rated employees`},
+   {label:'Under Performers (Low perf + Low potential)',value:fmt.pct(T.nine['1-1'][1]/T.rated),type:'trk',sub:`${T.nine['1-1'][1]} of ${T.rated} rated`}];
+  const cell=(k,bg,c)=>{const v=T.nine[k];return `<div style="background:${bg};border:1px solid ${c};border-radius:8px;padding:10px;text-align:center"><div style="font-size:11px;color:var(--mut)">${v[0]}</div><div style="font-size:24px;font-weight:700">${v[1]}</div></div>`};
+  const nine=`<div style="display:grid;grid-template-columns:22px repeat(3,1fr);gap:6px;align-items:stretch">
+   <div style="display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--mut);writing-mode:vertical-rl;transform:rotate(180deg);grid-row:1/4">POTENTIAL</div>
+   ${cell('1-3','#e0f2f1','#80cbc4')}${cell('2-3','#dbeafe','#60a5fa')}${cell('3-3','#fef9c3','#fbbf24')}
+   ${cell('1-2','#f3e8ff','#c084fc')}${cell('2-2','#f0f9ff','#7dd3fc')}${cell('3-2','#dcfce7','#86efac')}
+   ${cell('1-1','#fee2e2','#fca5a5')}${cell('2-1','#f1f5f9','#cbd5e1')}${cell('3-1','#ecfdf5','#6ee7b7')}
+   <div></div><div style="text-align:center;font-size:10px;color:var(--mut)">Low</div><div style="text-align:center;font-size:10px;color:var(--mut)">Moderate</div><div style="text-align:center;font-size:10px;color:var(--mut)">High</div></div>
+   <div style="text-align:center;font-size:10px;color:var(--mut);margin-top:2px">PERFORMANCE → (rows: potential High / Moderate / Low)</div>`;
+  const scards=[
+   {label:'Internal Ready-Now Coverage',value:fmt.pct(U.withInternalReadyNow/U.roles),type:'prop',sub:`${U.withInternalReadyNow} of ${U.roles} roles have an internal ready-now successor`},
+   {label:'Bench Strength (2+ internal successors)',value:fmt.pct(U.withTwoInternal/U.roles),type:'prop',sub:`${U.withTwoInternal} of ${U.roles} roles`},
+   {label:'Key Role Coverage',value:fmt.pct(U.keyWithInternalReadyNow/U.keyRoles),type:'prop',sub:`${U.keyWithInternalReadyNow} of ${U.keyRoles} key roles have an internal ready-now successor`},
+   {label:'Internal Pipeline %',value:fmt.pct(U.internal/U.slotsFilled),type:'prop',sub:`${U.internal} of ${U.slotsFilled} named successors are internal`},
+   {label:'Development Plans On Track',value:fmt.pct(U.devPlan['On Track']/(U.devPlan['On Track']+U.devPlan['Not Started'])),type:'prop',sub:`${U.devPlan['On Track']} of ${U.devPlan['On Track']+U.devPlan['Not Started']} internal successors with a plan to start (excl. N/A)`},
+   {label:'Roles with Succession Plan',value:fmt.pct(U.rolesWithPlan/U.roles),type:'trk',sub:`${U.rolesWithPlan} of ${U.roles} incumbent roles in scope`}];
+  const rd=U.readiness, rdT=sum(Object.values(rd));
+  const funnel=hBars([['Roles in succession scope',U.roles,'#8a94a6'],['≥1 internal successor',U.withInternal,'#2b5fd9'],['≥2 internal successors',U.withTwoInternal,'#7c3aed'],['≥1 internal ready-now',U.withInternalReadyNow,'#1f9d63']],U.roles);
+  const lvl=Object.entries(T.topByLevel).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td><td>${T.keyByLevel[k]||0}</td></tr>`).join('');
+  return `<h2>Talent Review</h2><p class="note">Source: Org Diagnostic tool · Talent Review · data as of ${T.asOf} · employees only (contractors excluded) · aggregate counts</p>
+  <div class="flag"><b>Proposed KPIs:</b> (1) Rating coverage — Director+ with both performance and potential rated (the Org Diagnostic's "unrated Dir &amp; above" measure); (2) Key roles held by top talent. Top Talent = Future Leader + Future Star + High Impact Performer.</div>`+cards(tcards)+
+  `<div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>9-Box: Performance × Potential</h3><div class="note">${T.rated} rated employees</div>${nine}</div>
+   <div class="card chartcard"><h3>Top Talent &amp; Key Roles by Level</h3><div class="note">Top talent ${T.topTalent} · key roles ${T.keyRoles}</div><table><tr><th>Level</th><th>Top Talent</th><th>Key Roles</th></tr>${lvl}</table></div></div>
+  <h2>Succession Planning</h2><p class="note">Source: Succession Planning Workbook (Master), ${U.asOf} · ${U.roles} incumbent roles · aggregate counts</p>
+  <div class="flag"><b>Proposed KPIs:</b> Internal ready-now coverage, bench strength, key role coverage, internal pipeline %, and development plans on track. Ready Now counts <b>internal</b> successors only: the workbook also lists ${U.external} external candidate and ${U.restructure} restructure placeholders as "Ready Now", which would overstate coverage. Key roles use the Org Diagnostic flag (${U.keyRoles}), matched to succession plans by employee ID.</div>`+cards(scards)+
+  `<div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Role Coverage Funnel</h3><div class="note">Share of ${U.roles} roles</div>${funnel}</div>
+   <div class="card chartcard"><h3>Internal Successor Readiness</h3><div class="note">${rdT} internal successors named</div>${hBars([['Ready Now',rd['Ready Now'],'#1f9d63'],['1-2 Years',rd['1-2 Years'],'#2b5fd9'],['3-5 Years',rd['3-5 Years'],'#e0a100'],['5+ Years',rd['5+ Years'],'#d64545']],rdT)}</div>
+   <div class="card chartcard"><h3>Successor Pipeline Source</h3><div class="note">${U.slotsFilled} named successors</div>${hBars([['Internal',U.internal,'#2b5fd9'],['External',U.external,'#8a94a6'],['Restructure',U.restructure,'#b4bcc9']],U.slotsFilled)}</div>
+   <div class="card chartcard"><h3>Development Plan Status (internal successors)</h3><div class="note">${U.internal} internal successors</div>${hBars([['On Track',U.devPlan['On Track'],'#1f9d63'],['Not Started',U.devPlan['Not Started'],'#d64545'],['N/A',U.devPlan['N/A'],'#b4bcc9']],U.internal)}</div></div>
+  `;
+}
+
+
+function redeployPage(){
+  const R=RD, rdT=R.reduce((x,e)=>x+(e.red||0),0), exT=R.reduce((x,e)=>x+e.exit,0), pdT=R.reduce((x,e)=>x+e.pend,0);
+  const ob=R.find(e=>e.n==='Obesity');const wd=R.filter(e=>e.declined!=null),acc=wd.reduce((x,e)=>x+e.red,0),off=wd.reduce((x,e)=>x+e.red+e.declined,0);
+  const loc=ob.remote+95;
+  const cs=[
+   {label:'Total Redeployments (2026)',value:fmt.n(rdT),type:'prop',sub:`Across ${R.filter(e=>e.red).length} events with redeployments reported`},
+   {label:'Low-Performer Exits (RIF)',value:fmt.n(exT),type:'prop',sub:`Across ${R.length} reorg events`},
+   {label:'Redeployment Acceptance Rate',value:fmt.pct(acc/off),type:'prop',sub:`${acc} of ${off} offered accepted (Madrigal, Eylea, Obesity)`},
+   {label:'Pending: On Warning Notice',value:fmt.n(pdT),type:'trk',sub:'57 COA (60-day warn) + 95 AZ (location-limited)'},
+   {label:'Unable to Redeploy — Location',value:fmt.n(loc),type:'trk',sub:'5 remote + 95 AZ warns (Obesity)'},
+   {label:'Reorg / Redeployment Events',value:fmt.n(R.length),type:'trk',sub:'Jun – Oct 2026'}];
+  const rows=R.map(e=>`<tr><td>${e.n}</td><td style="text-align:left">${e.d}</td><td>${e.red==null?'—':fmt.n(e.red)+''}</td><td>${e.declined==null?'—':e.declined}</td><td>${e.exit}</td><td>${e.pend||'—'}</td></tr>`).join('');
+  const mk=(f,t,c)=>hBars(R.filter(e=>f(e)>0).map(e=>[e.n,f(e),c]),t);
+  return `<h2>Reorgs &amp; Redeployments</h2><p class="note">2026 events · counts as provided · aggregate only</p>
+  <div class="flag"><b>Proposed KPIs:</b> total redeployments, low-performer exits (RIF), and redeployment acceptance rate (redeployed ÷ (redeployed + declined)). Acceptance rate covers Madrigal, Eylea, and Obesity, the events with decline data. Pending warns (COA, AZ) are shown separately and not counted as exits.</div>`+cards(cs)+
+  `<div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Redeployments by Event</h3><div class="note">${fmt.n(rdT)} total</div>${mk(e=>e.red||0,rdT,'#1f9d63')}</div>
+   <div class="card chartcard"><h3>Low-Performer Exits by Event</h3><div class="note">${exT} total (executed)</div>${mk(e=>e.exit,exT,'#d64545')}</div></div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">Event Detail</h3><table><tr><th>Event</th><th style="text-align:left">Timing</th><th>Redeployed</th><th>Declined</th><th>Exited (RIF)</th><th>Pending Warns</th></tr>${rows}</table>
+  <ul class="m">${R.filter(e=>e.note).map(e=>`<li><b>${e.n}:</b> ${e.note}</li>`).join('')}</ul></div>`;
+}
+
+
+
+function compSection(){
+  const C=COMP,k=v=>'$'+(v/1000).toFixed(1)+'K';
+  const cs=[
+   {label:'Average Compa Ratio',value:C.avgCR.toFixed(2),type:'prop',sub:`Target range 0.90–1.10 · median ${C.medianCR.toFixed(2)} · ${fmt.n(C.withCR)} employees with a band midpoint`},
+   {label:'Employees Within Pay Range (0.90–1.10)',value:fmt.pct(C.within/C.withCR),type:'prop',sub:`${fmt.n(C.within)} of ${fmt.n(C.withCR)} employees`},
+   {label:'Below Range (compa under 0.90)',value:fmt.n(C.below),type:'trk',sub:`${fmt.pct(C.below/C.withCR)} of employees with a band midpoint`},
+   {label:'Above Range (compa over 1.10)',value:fmt.n(C.above),type:'trk',sub:`${fmt.pct(C.above/C.withCR)} of employees with a band midpoint`},
+   {label:'Average Base Salary',value:k(C.avgBase),type:'trk',sub:`Median ${k(C.medianBase)} · ${fmt.n(C.employees)} employees`},
+   {label:'Employees Missing a Band Midpoint',value:fmt.n(C.noMid),type:'trk',sub:`${fmt.pct(C.noMid/C.employees)} of employees · compa ratio can't be calculated`}];
+  const colr=i=>i<3?'#d64545':i<5?'#e0a100':'#1f9d63';
+  const lv=C.levels.map(r=>`<tr><td style="text-align:left">${r[0]}</td><td>${fmt.n(r[1])}</td><td>${r[3].toFixed(2)}</td><td>${r[4]==null?'—':k(r[4])}</td><td>${fmt.pct(r[5]/r[2])}</td><td>${fmt.pct(r[6]/r[2])}</td></tr>`).join('');
+  return `<h2>Compensation</h2><p class="note">Source: Org Diagnostic tool · employees only (contractors excluded) · data as of ${C.asOf} · compa ratio = base salary ÷ band midpoint</p>
+  <div class="flag"><b>Proposed KPIs:</b> average compa ratio and % of employees within the 0.90–1.10 pay range (the tool's target range). Average total compensation is not shown: the bonus and LTI fields in this file are only partly populated (264 employees have a bonus recorded, about $0.3M, versus $9.2M in the bonus spend data) and LTI skews executive averages. Executive-level figures are combined with VPs because the group is too small to show separately.</div>`+cards(cs)+
+  `<div class="grid2" style="margin-top:12px">${chartCard('Compa Ratio Distribution','Employees by compa ratio band · red below 0.90, yellow 0.90–0.99, green 1.00+',barChart(C.buckets.map(b=>b[0]),C.buckets.map(b=>b[1])))}
+   <div class="card chartcard"><h3>By Level</h3><div class="note">Employees with a band midpoint</div><table><tr><th style="text-align:left">Level</th><th>Employees</th><th>Avg Compa</th><th>Avg Base</th><th>% Below</th><th>% Above</th></tr>${lv}</table></div></div>`;
+}
+
+function compBonusPage(){
+  const B=BON, T=B.total, k=v=>v>=1e6?'$'+(v/1e6).toFixed(2)+'M':v>=1e3?'$'+Math.round(v/1e3)+'K':fmt.usd(v);
+  const disc=B.types.find(t=>t[0]==='Discretionary'), elt=B.types[0];
+  const cs=[
+   {label:'Total Bonus Spend (YTD)',value:k(T),type:'prop',sub:`${fmt.n(B.payments)} payments · through ${B.asOf}`},
+   {label:'Employees Receiving a Bonus',value:fmt.n(B.uniqueEE),type:'prop',sub:'Unique employees, each counted once'},
+   {label:'Discretionary Bonus % of Spend',value:fmt.pct(disc[3]/T),type:'prop',sub:`${k(disc[3])} to ${disc[2]} employees`},
+   {label:'ELT/SLT EBITDA Share of Spend',value:fmt.pct(elt[3]/T),type:'trk',sub:`${k(elt[3])} to ${elt[2]} employees`},
+   {label:'PS 90 / 180 Day & Quality Bonuses',value:k(B.ps.spend),type:'trk',sub:`${B.ps.ee} unique employees`}];
+  const tcol=['#2b5fd9','#7c3aed','#1f9d63','#e0a100','#d64545','#00a3a3','#8a94a6'];
+  const typeBars=hBars(B.types.slice(0,8).map((t,i)=>[`${t[0]} <span style="color:var(--mut)">· ${fmt.n(t[2])} EEs</span>`,Math.round(t[3]),tcol[i%7]]),T);
+  const deptBars=hBars(B.depts.slice(0,8).map((t,i)=>[`${t[0]} <span style="color:var(--mut)">· ${fmt.n(t[2])} EEs</span>`,Math.round(t[3]),'#2b5fd9']),T);
+  const typeRows=B.types.map(t=>`<tr><td>${t[0]}</td><td>${fmt.n(t[1])}</td><td>${fmt.n(t[2])}</td><td>${fmt.usd(t[3])}</td><td>${fmt.pct(t[3]/T)}</td><td>${fmt.usd(t[3]/t[2])}</td></tr>`).join('');
+  const deptRows=B.depts.map(t=>`<tr><td>${t[0]}</td><td>${fmt.n(t[1])}</td><td>${fmt.n(t[2])}</td><td>${fmt.usd(t[3])}</td><td>${fmt.pct(t[3]/T)}</td></tr>`).join('');
+  const psRows=B.ps.types.map(t=>`<tr><td>${t[0]}</td><td>${t[1]}</td><td>${fmt.usd(t[2])}</td></tr>`).join('');
+  return compSection()+
+  `<h2>Bonus Spend</h2><p class="note">2026 YTD · pay dates through ${B.asOf} · anonymized aggregates</p>
+  <div class="flag"><b>Proposed KPIs:</b> total bonus spend, employees receiving a bonus, and discretionary bonus % of spend (a governance indicator). Bonus type is used for all figures. Payroll accounting codes show Discretionary at ${k(B.acctDiscretionary)} (${fmt.pct(B.acctDiscretionary/T)}) because most PS 90/180 Day payments and Project Elevate 1.0 are coded there. A participation rate isn't shown: 3,548 recipients exceeds current headcount since the file includes employees no longer active.</div>`+cards(cs)+
+  `<div class="grid2" style="margin-top:12px">${chartCard('Spend by Month','Pay-date month · March (EBITDA) and May (PMO) drive the peaks',barChart(B.monthly.map(m=>m[0]),B.monthly.map(m=>m[1]),{f:v=>'$'+(v>=1e6?(v/1e6).toFixed(1)+'M':Math.round(v/1e3)+'K')}))}
+   <div class="card chartcard"><h3>Spend by Bonus Type (top 8)</h3><div class="note">Share of ${k(T)}</div>${typeBars}</div>
+   <div class="card chartcard"><h3>Spend by Department (top 8)</h3><div class="note">Share of ${k(T)} · ${B.deptCount} departments total</div>${deptBars}</div>
+   <div class="card chartcard"><h3>Patient Solutions 90 Day / 180 Day / Quality</h3><div class="note">${B.ps.ee} unique employees · ${fmt.usd(B.ps.spend)} combined</div><table><tr><th>Bonus</th><th>EEs</th><th>Spend</th></tr>${psRows}</table></div></div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">All Bonus Types</h3><table><tr><th>Bonus Type</th><th>Payments</th><th>Unique EEs</th><th>Spend</th><th>% of Spend</th><th>Avg / EE</th></tr>${typeRows}</table></div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">Top 10 Departments by Spend</h3><table><tr><th>Department</th><th>Payments</th><th>Unique EEs</th><th>Spend</th><th>% of Spend</th></tr>${deptRows}</table><ul class="m"><li>Employees who changed departments can appear in more than one department.</li></ul></div>`;
+}
+
+
+function talentAcqPage(){
+  const G=GD;
+  const cs=[
+   {label:'Glassdoor Overall Rating',value:G.overall.toFixed(1)+' / '+G.scale.toFixed(1),type:'prop',sub:`Based on ${fmt.n(G.ratings)} ratings`},
+   {label:'Would Recommend to a Friend',value:fmt.pct(G.recommend),type:'prop',sub:'Share of reviewers'},
+   {label:'CEO Approval',value:fmt.pct(G.ceoApprove),type:'trk',sub:'Share of reviewers'},
+   {label:'Number of Ratings',value:fmt.n(G.ratings),type:'trk',sub:`As of ${G.asOf}`}];
+  const bars=G.cats.map(c=>{const col=c[0]==='Overall'?'#2b5fd9':'#7c8fb3';return `<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:12px"><span${c[0]==='Overall'?' style="font-weight:700"':''}>${c[0]}</span><b>${c[1].toFixed(1)}</b></div><div class="bar" style="height:9px"><i style="width:${c[1]/G.scale*100}%;background:${col}"></i></div></div>`}).join('');
+  const lo=G.cats.slice(1).reduce((a,b)=>b[1]<a[1]?b:a), hi=G.cats.slice(1).reduce((a,b)=>b[1]>a[1]?b:a);
+  const hiresLag=WFA.hires.slice(0,6).reduce((a,b)=>a+b,0);
+  const N=FUN, Q=REQ, T=TTA, F=REF, rcs=[
+   {label:'Open Requisitions',value:fmt.n(Q.total),type:'prop',sub:`As of ${Q.asOf}`},
+   {label:'Billable Open Reqs',value:fmt.n(Q.billable),type:'trk',sub:`${fmt.pct(Q.billable/Q.total)} of open reqs · all Patient Solutions`},
+   {label:'Non-Billable Open Reqs',value:fmt.n(Q.total-Q.billable),type:'trk',sub:`${fmt.pct((Q.total-Q.billable)/Q.total)} of open reqs`},
+   {label:'Time to Fill — YTD (days)',value:T.ytd.all.toFixed(1),type:'prop',sub:`Latest month (Oct, partial): ${T.all[T.all.length-1].toFixed(1)} · ADP through Jul, iCIMS from Aug`},
+   {label:'Time to Fill — Billable (Hub / RX)',value:T.ytd.hub.toFixed(1)+' / '+T.ytd.rx.toFixed(1),type:'trk',sub:'YTD days · Billable-Hub / Billable-RX'},
+   {label:'Time to Fill — Non-Billable',value:T.ytd.non.toFixed(1),type:'trk',sub:'YTD days'},
+   {label:'Application-to-Hire %',value:fmt.pct(N.appToHire),type:'prop',sub:`${fmt.n(N.stages[6][1])} hires from ${fmt.n(N.stages[0][1])} applications · excludes internal mobility`},
+   {label:'Offer Acceptance Rate',value:fmt.pct(N.acceptRate),type:'prop',sub:`${fmt.n(N.stages[5][1])} accepts from ${fmt.n(N.stages[4][1])} offers`},
+   {label:'Screen-to-HM Submission %',value:fmt.pct(N.screenToHM),type:'trk',sub:`${fmt.n(N.stages[2][1])} HM submissions from ${fmt.n(N.stages[1][1])} screens`},
+   {label:'Referral Bonus Payments (YTD)',value:fmt.n(F.payments),type:'prop',sub:`${fmt.usd(F.spend)} paid · ${fmt.pct(F.spend/F.bonusTotal)} of total bonus spend`},
+   {label:'Employees Earning Referral Bonuses',value:fmt.n(F.uniqueEE),type:'prop',sub:`Unique employees (net of reversals) · avg ${fmt.usd(F.spend/F.payments)} per payment`},
+   {label:'Referral Bonus Payments as % of New Hires',value:fmt.pct(F.payments/hiresLag),type:'prop',sub:`${F.payments} payments vs ${fmt.n(hiresLag)} hires (Jan–Jun, matched to the 90-day wait) · ${fmt.pct(F.uniqueEE/hiresLag)} using unique employees earning bonuses`}];
+  const reqBars=hBars(Q.depts.map(d=>[d[0]+(d[2]?' <span style="color:var(--mut)">· billable</span>':''),d[1],d[2]?'#1f9d63':'#2b5fd9']),Q.total);
+  return `<h2>Recruiting</h2><p class="note">Open requisitions as of ${Q.asOf}</p>`+cards(rcs)+
+  `<div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Open Reqs by Department</h3><div class="note">${Q.total} open · billable shown in green</div>${reqBars}</div>
+   <div class="card chartcard"><h3>Trend</h3><div class="note">Open reqs over time</div>${placeholder('No history yet','Add prior snapshots to show trend')}</div></div>`+
+  `<h2 style="font-size:13px;color:var(--mut)">Time to Fill</h2>
+  <div class="flag">Time to Fill assumed to be in days. <b>Source change:</b> a new CRM (iCIMS) launched in Aug 2026, so Jan–Jul come from ADP and Aug–Oct from iCIMS; compare across the change with care. The iCIMS-only YTD figure is ${T.icimsYtd.toFixed(1)} vs ${T.ytd.all.toFixed(1)} across both systems. *October is partial (through 10/26). Billable-RX in Oct (39.8) and several program/department values reflect very small volumes.</div>
+  <div class="grid2" style="margin-top:12px">${chartCard('Time to Fill by Month','Days · total across all positions',lineChart(T.months,[{name:'All',data:T.all},{name:'Billable-Hub',data:T.hub},{name:'Billable-RX',data:T.rx},{name:'Non-Billable',data:T.non}],{f:fmt.d1}))}
+   <div class="card chartcard"><h3>By Department (iCIMS YTD)</h3><div class="note">Days · departments with data</div><table><tr><th>Type: Department</th><th>Days</th></tr>${T.depts.map(d=>`<tr><td>${d[0]}</td><td>${d[1]}</td></tr>`).join('')}</table></div></div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">By Program (iCIMS YTD, days)</h3><table><tr><th>Program</th><th>Days</th><th>Program</th><th>Days</th></tr>${Array.from({length:Math.ceil(T.programs.length/2)},(_,i)=>{const a=T.programs[i],b=T.programs[i+Math.ceil(T.programs.length/2)];return `<tr><td>${a[0]}</td><td>${a[1].toFixed(1)}</td><td>${b?b[0]:''}</td><td>${b?b[1].toFixed(1):''}</td></tr>`}).join('')}</table><ul class="m"><li>Programs with no accepted offers YTD are omitted.</li></ul></div>`+
+  `<h2 style="font-size:13px;color:var(--mut)">Recruiting Funnel</h2>
+  <div class="flag"><b>Data began with the new CRM launch in Aug 2026</b> (Aug–Oct 24, 2026 only), so the funnel is not a full-year view. Rates exclude internal mobility, so stage-to-stage rates in the table differ slightly from the reported figures. Source channel labels are truncated in the source; "Current Employee" is read as the employee referral channel. Average time to fill in this view is ${N.avgTTF.toFixed(1)} days (time to hire ${N.avgTTH.toFixed(2)}), versus ${TTA.ytd.all.toFixed(1)} YTD above. *October is partial.</div>`+
+  cards([{label:'Applications',value:fmt.n(N.stages[0][1]),type:'trk',sub:'Aug – Oct 24, 2026'},{label:'Hires',value:fmt.n(N.stages[6][1]),type:'trk',sub:`${N.futureStarts} more future starts`},{label:'Avg Time to Fill',value:N.avgTTF.toFixed(1)+' days',type:'trk',sub:'New CRM, Aug–Oct'},{label:'Avg Time to Hire',value:N.avgTTH.toFixed(2)+' days',type:'trk',sub:'New CRM, Aug–Oct'}])+
+  `<div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Candidates by Stage</h3><div class="note">Share of applications</div>${hBars(N.stages.map((x,i)=>[x[0],x[1],'#2f7077']),N.stages[0][1])}</div>
+   <div class="card chartcard"><h3>Stage Conversion</h3><div class="note">Count and % of prior stage</div><table><tr><th>Stage</th><th>Count</th><th>% of Prior Stage</th></tr>${N.stages.map((x,i)=>`<tr><td>${x[0]}</td><td>${fmt.n(x[1])}</td><td>${i?fmt.pct(x[1]/N.stages[i-1][1]):'—'}</td></tr>`).join('')}</table></div>
+   ${chartCard('Applications by Month','New CRM',barChart(N.months.map(m=>m[0]),N.months.map(m=>m[1])))}
+   <div class="card chartcard"><h3>Candidates by Source Channel</h3><div class="note">Share of applications · approximate from chart</div>${hBars(N.sources.map((x,i)=>[x[0],x[1],['#8a94a6','#2b5fd9','#7c3aed','#1f9d63','#b4bcc9'][i]]),100)}</div>
+   <div class="card chartcard"><h3>Applications by Status</h3><div class="note">Approximate from chart</div>${hBars(N.status.map((x,i)=>[x[0],x[1],['#2f7077','#00a58f','#a8dadc','#073b4c','#b4bcc9'][i]]),100)}</div></div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">Recruiting Activity by Leader Org</h3><table><tr><th>Org</th><th>Apps</th><th>Screens</th><th>HM Subs</th><th>Interviews</th><th>Offers</th><th>Accepts</th><th>Future Starts</th><th>Hires</th><th>Avg Time to Fill</th><th>Accept %</th></tr>${N.orgs.map(o=>`<tr><td>${o[0]}</td>${[1,2,3,4,5,6,7,8].map(i=>`<td>${o[i]==null?'—':fmt.n(o[i])}</td>`).join('')}<td>${o[9]==null?'—':o[9].toFixed(1)}</td><td>${o[10]==null?'—':o[10]+'%'}</td></tr>`).join('')}<tr><th>Total</th><th>16,307</th><th>1,140</th><th>813</th><th>581</th><th>414</th><th>358</th><th>33</th><th>334</th><th>17.0</th><th>86.4%</th></tr></table><ul class="m"><li>Orgs are the leader rollups from the recruiting report, labeled by the departments they contain.</li></ul></div>`+
+  `<h2 style="font-size:13px;color:var(--mut)">Employee Referrals</h2>
+  <div class="flag">Referral figures come from the Employee Referral Bonus line in the 2026 bonus data (pay dates Jan 9 – Sep 18). Payments are bonus payments, not hires; a hire may generate more than one payment, and ${F.reversals} payments are reversals. The referral rate compares bonus payments through Sep 18 to hires through mid-June, since referral bonuses are paid after a 90-day wait (Jan–Jun hires from Workforce Analytics, which include program-related onboarding waves). It is still an approximation: a hire can generate more than one payment. Send referral hire counts for an exact rate.</div>
+  <div class="grid2" style="margin-top:12px">${chartCard('Referral Bonus Payments by Month','Pay-date month',barChart(F.months,F.monthlyPay))}
+   ${chartCard('Referral Bonus Spend by Month','Pay-date month',barChart(F.months,F.monthlySpend,{f:v=>'$'+Math.round(v/1000)+'K',color:'#e0a100'}))}</div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">Referral Bonuses by Department</h3><table><tr><th>Department</th><th>Payments</th><th>Spend</th><th>% of Spend</th></tr>${F.depts.slice().sort((a,b)=>b[2]-a[2]).map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${fmt.usd(r[2])}</td><td>${fmt.pct(r[2]/F.spend)}</td></tr>`).join('')}<tr><th>Total</th><th>${F.payments}</th><th>${fmt.usd(F.spend)}</th><th>100%</th></tr></table></div>`+
+  `<h2>Glassdoor</h2><p class="note">Snapshot as of ${G.asOf} · rating scale 0–${G.scale.toFixed(1)}</p>
+  <div class="flag"><b>Proposed KPIs:</b> overall rating and % who would recommend to a friend. Category ratings are shown for context. Lowest: Culture &amp; Values and Senior Management (2.5); highest: Diversity &amp; Inclusion (3.2). Add monthly snapshots to see trends.</div>`+cards(cs)+
+  `<div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Ratings by Category</h3><div class="note">Out of ${G.scale.toFixed(1)}</div>${bars}</div>
+   <div class="card chartcard"><h3>Trend</h3><div class="note">Overall rating and recommend % over time</div>${placeholder('No history yet','Trend appears once a second snapshot is loaded')}</div></div>`;
+}
+
+
+function engagementPage(){
+  const E=ENG, F=E.factors.slice().sort((a,b)=>b[1]-a[1]);
+  const above=F.filter(f=>f[1]>f[2]).length, gap=Math.round((E.overall-E.bench)*100);
+  const sg=v=>(v>0?'+':'')+v;
+  const cs=[
+   {label:'Overall Engagement (Favorable)',value:fmt.pct(E.overall),type:'prop',sub:`Benchmark ${fmt.pct(E.bench)} · ${sg(gap)} pt vs benchmark`},
+   {label:'Survey Participation Rate',value:fmt.pct(E.participation),type:'prop',sub:`${fmt.n(E.responses)} responses`},
+   {label:'Factors At/Above Benchmark',value:`${above} of ${F.length}`,type:'trk',sub:'Of all survey factors'},
+   {label:'Largest Gap vs Benchmark',value:(()=>{const m=Math.min(...F.map(f=>f[1]-f[2]));return m+' pts'})(),type:'trk',sub:(()=>{const m=Math.min(...F.map(f=>f[1]-f[2]));return F.filter(f=>f[1]-f[2]===m).map(f=>f[0]).join(', ')})()}];
+  const rows=F.map(f=>{const d=f[1]-f[2];const col=d>0?'var(--g)':d<0?'var(--r)':'var(--mut)';return `<div style="margin:11px 0"><div style="display:flex;justify-content:space-between;font-size:12px"><span>${f[0]}</span><span><b>${f[1]}%</b> <span style="color:var(--mut)">vs ${f[2]}%</span> <b style="color:${col}">(${sg(d)})</b></span></div>
+   <div style="position:relative;height:10px;background:#eceff4;border-radius:5px"><div style="width:${f[1]}%;height:100%;background:#2b5fd9;border-radius:5px"></div><div title="Benchmark" style="position:absolute;top:-3px;left:${f[2]}%;width:2px;height:16px;background:#1c2430"></div></div></div>`}).join('');
+  const tbl=F.map(f=>{const d=f[1]-f[2];return `<tr><td>${f[0]}</td><td>${f[1]}%</td><td>${f[2]}%</td><td style="color:${d>0?'var(--g)':d<0?'var(--r)':'var(--mut)'}">${sg(d)}</td></tr>`}).join('');
+  return `<h2>Engagement Survey</h2><p class="note">Annual survey, ${E.asOf} · benchmark: Professional Services (1,000–5,000 employees) · % favorable</p>
+  <div class="flag"><b>Proposed KPIs:</b> overall engagement (% favorable, compared to benchmark) and survey participation rate. All 13 survey factors are shown.</div>`+cards(cs)+
+  `<div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Factor Favorability vs Benchmark</h3><div class="note">Bar = AssistRx · black tick = benchmark</div>${rows}</div>
+   <div class="card chartcard"><h3>Factor Detail</h3><div class="note">Sorted by score</div><table><tr><th>Factor</th><th>Score</th><th>Benchmark</th><th>Diff (pts)</th></tr>${tbl}</table></div></div>
+  <div class="card chartcard" style="margin-top:12px"><h3>Trend</h3><div class="note">Year-over-year engagement and participation</div>${placeholder('No prior survey loaded','Add prior-year results to show trend')}</div>`;
+}
+
+
+function ergPage(){
+  const E=ERG, tot=E.months.map((_,i)=>E.groups.reduce((x,g)=>x+g[2][i],0));
+  const cs=[
+   {label:'ERG Members (signed up)',value:fmt.n(E.signedUp),type:'prop',sub:`${E.count} ERGs · ${fmt.pct(E.signedUp/ELIG.headcount)} of ${fmt.n(ELIG.headcount)} eligible employees`},
+   {label:'Member Participation (unique attendees)',value:fmt.pct(E.uniqueAttendees/E.signedUp),type:'prop',sub:`${E.uniqueAttendees} unique attendees of ${E.signedUp} members, Jul–Sep`},
+   {label:'Repeat Attendance Rate',value:fmt.pct(E.returnRate),type:'prop',sub:'Attendees who came back for more'},
+   {label:'Psychological Safety Rating',value:E.safety.toFixed(1)+' / 5.0',type:'prop',sub:'Average from moderator debriefs'},
+   {label:'Avg Monthly Attendance',value:fmt.d1(sum(tot)/tot.length),type:'trk',sub:`${tot.join(' · ')} (${E.months.join(' · ')})`},
+   {label:'DIB Hub Page Views',value:fmt.n(E.hubViews),type:'trk',sub:`Last 90 days · ${E.courses} DIB courses in the LMS`}];
+  const rows=E.groups.map(g=>`<tr><td>${g[0]}</td><td>${g[1]}</td>${g[2].map(v=>`<td>${v}</td>`).join('')}<td>${fmt.pct(g[2][2]/g[1])}</td></tr>`).join('');
+  return `<h2>Employee Resource Groups</h2><p class="note">Lunch, Learn &amp; Share launched Jun 2, 2026 · data through ${E.asOf} · HR 2026 goal 3.6 Culture &amp; DEI&amp;B programs (${E.count} ERGs, beyond goal)</p>
+  <div class="flag"><b>Proposed KPIs:</b> ERG membership, member participation (unique attendees ÷ members), repeat attendance, and psychological safety rating. Participation covers Jul–Sep only. Membership % of eligible employees uses the interim ${fmt.n(ELIG.headcount)} headcount.</div>`+cards(cs)+
+  `<div class="grid2" style="margin-top:12px">${chartCard('Monthly Attendance (all ERGs)','Jul – Sep 2026',barChart(E.months,tot))}
+   <div class="card chartcard"><h3>Attendance by ERG</h3><div class="note">Members and monthly attendees</div><table><tr><th>ERG</th><th>Members</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Sep % of Members</th></tr>${rows}<tr><th>Total</th><th>${E.signedUp}</th>${tot.map(v=>`<th>${v}</th>`).join('')}<th>${fmt.pct(tot[2]/E.signedUp)}</th></tr></table></div></div>
+  <div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>What We Hear</h3><ul class="m">${E.groups.map(g=>`<li><b>${g[0]}:</b> ${g[3]}</li>`).join('')}</ul></div>
+   <div class="card chartcard"><h3>Monthly Topics (posted to DIB Hub)</h3><ul class="m">${E.topics.map(t=>`<li><b>${t[0]}:</b> ${t[1]}</li>`).join('')}</ul><h3 style="margin-top:12px">What We're Acting On</h3><ul class="m">${E.actions.map(a=>`<li>${a}</li>`).join('')}</ul></div></div>`;
+}
+
+
+function wfaPage(){
+  const CN=CON, D=DEM, X=WFT, M=WFM, W=WFA, d1=v=>v.toFixed(1)+'%';
+  const cs=[
+   {label:'Headcount (employees)',value:fmt.n(W.headcount),type:'kpi',sub:`As of ${W.asOf} · excludes contractors`},
+   {label:'New Hires (YTD)',value:fmt.n(W.ytd.hires),type:'kpi',sub:`vs ${fmt.n(W.ytd.terms)} YTD terminations`},
+   {label:'Terminations (YTD)',value:fmt.n(W.ytd.terms),type:'kpi',sub:`${fmt.n(W.ytd.vol)} voluntary · ${fmt.n(W.ytd.invol)} involuntary · ${X.reasonsAll.total} excluding sunsets`},
+   {label:'Turnover — Rolling 12 Months (HR View)',value:fmt.pct(W.roll.total),type:'kpi',sub:`${fmt.pct(W.roll.vol)} voluntary · ${fmt.pct(W.roll.invol)} involuntary`},
+   {label:'Voluntary Turnover — Rolling 12 Months',value:fmt.pct(W.roll.vol),type:'trk',sub:'Component of total turnover · excludes program sunsets'},
+   {label:'Involuntary Turnover — Rolling 12 Months',value:fmt.pct(W.roll.invol),type:'trk',sub:'Component of total turnover · excludes RIF, position elim, sunsets'},
+   {label:'30-Day New Hire Retention',value:'91.3%',type:'prop',sub:'Share of new hires still employed 30 days after hire'},
+   {label:'60-Day New Hire Retention',value:'83.9%',type:'prop',sub:'Share still employed 60 days after hire'},
+   {label:'90-Day New Hire Retention',value:'79.2%',type:'prop',sub:'Share still employed 90 days after hire'},
+   {label:'Contingent Workers (Contractor Volume)',value:fmt.n(M.contingent),type:'prop',sub:`${fmt.pct(M.contingent/M.total)} of ${fmt.n(M.total)} total workforce · spend TBD`},
+   {label:'Remote Employees',value:fmt.pct(M.remote/W.headcount),type:'trk',sub:`${fmt.n(M.remote)} remote · ${fmt.n(M.hub)} hub-based`},
+   {label:'Contractor Spend (annualized)',value:'$'+CN.total.sepSpend.toFixed(1)+'M',type:'prop',sub:`${CN.asOf} actual spend (Finance monthly report) · ${CN.total.sepFTE.toFixed(1)} contractor FTE`},
+   {label:'People of Color (% of employees)',value:fmt.pct(D.poc/D.total),type:'prop',sub:`${fmt.n(D.poc)} of ${fmt.n(D.total)} employees · as of ${D.asOf}`},
+   {label:'Women in Leadership (Director and above)',value:fmt.pct(D.leadership.women/D.leadership.total),type:'prop',sub:`${D.leadership.women} of ${D.leadership.total} Directors, VPs, Exec and C-Suite (excl. Associate Directors)`},
+   {label:'Female Workforce',value:fmt.pct(D.gender[0][1]/D.total),type:'trk',sub:`${fmt.n(D.gender[0][1])} of ${fmt.n(D.total)} employees`},
+   {label:'Dashboard Availability',value:`${HAB.items.filter(i=>i[3]==='Active').length} of ${HAB.items.length}`,type:'prop',sub:`HR analytics builds active since Mar 2026 · ${HAB.items.filter(i=>i[3]!=='Active').length} in development`}];
+  const rows=W.depts.map(r=>`<tr><td>${r[0]}</td><td>${fmt.n(r[1])}</td><td>${fmt.n(r[2])}</td><td>${fmt.n(r[3])}</td><td>${r[4]}</td><td>${r[5]}</td><td>${d1(r[6])}</td></tr>`).join('');
+  const sd=i=>W.depts.reduce((x,r)=>x+r[i],0),oth=[W.headcount-sd(1),W.ytd.hires-sd(2),W.ytd.terms-sd(3),W.ytd.vol-sd(4),W.ytd.invol-sd(5)];
+  const rows2=rows+`<tr><td>All other departments (&lt;25 employees)</td><td>${fmt.n(oth[0])}</td><td>${fmt.n(oth[1])}</td><td>${fmt.n(oth[2])}</td><td>${oth[3]}</td><td>${oth[4]}</td><td>—</td></tr><tr><th style="text-align:left">Total</th><th>${fmt.n(W.headcount)}</th><th>${fmt.n(W.ytd.hires)}</th><th>${fmt.n(W.ytd.terms)}</th><th>${W.ytd.vol}</th><th>${W.ytd.invol}</th><th>${d1(W.roll.total*100)}</th></tr>`;
+  const pct=v=>v.toFixed(0)+'%';
+  return `<h2>Workforce Analytics</h2><p class="note">Headcount as of ${W.asOf} · HR View turnover excludes contractors, RIF, position eliminations, program sunsets, mutual agreements and no-shows; rolling 12-month figures also exclude sunsets</p>
+  <div class="flag"><b>KPIs:</b> headcount, YTD new hires, YTD terminations, and rolling 12-month turnover (voluntary and involuntary shown as components). Rolling turnover has risen from 19.8% in January to 26.7% (voluntary 10.7% to 15.6%). Departments with 25+ employees are listed individually; smaller departments are combined into one row to avoid exposing small groups, and the total ties to company headcount, YTD hires and YTD terms. *October is a partial month (through 10/12).</div>`+cards(cs)+
+  `<div class="grid2" style="margin-top:12px">${chartCard('Rolling 12-Month Turnover','HR View, month-end',lineChart(W.months,[{name:'Total',data:W.rTot},{name:'Voluntary',data:W.rVol},{name:'Involuntary',data:W.rInv}],{f:v=>v.toFixed(0)+'%'}))}
+   ${chartCard('New Hire Retention Curve','% still employed at 30, 60 and 90 days (cohort period not specified)',lineChart(['Hire','30 days','60 days','90 days'],[{name:'Retention',data:[100,91.3,83.9,79.2]}],{f:v=>v.toFixed(0)+'%'}))}
+   ${chartCard('Headcount by Month','Month-end employees',lineChart(W.months,[{name:'Headcount',data:W.ee}]))}
+   ${chartCard('Monthly New Hires vs Terminations','Includes program-related activity',lineChart(W.months,[{name:'New hires',data:W.hires},{name:'Terminations',data:W.terms}]))}
+   ${chartCard('Monthly Terminations: Voluntary vs Involuntary','',lineChart(W.months,[{name:'Voluntary',data:W.vol},{name:'Involuntary',data:W.invol}]))}</div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">By Department</h3><table><tr><th>Department</th><th>Employees</th><th>YTD Hires</th><th>YTD Terms</th><th>Vol</th><th>Invol</th><th>Rolling 12-Mo Turnover</th></tr>${rows2}</table>
+  <ul class="m"><li>YTD hire and termination counts include program-related activity (e.g., sunsets, large onboarding waves). Rolling 12-month turnover excludes sunsets.</li><li>ARx PS Pharmacy (63.5%) and Patient Solutions (31.9%) drive enterprise turnover.</li></ul></div>`+`  <h2>Highest Turnover</h2><p class="note">Ranked by rolling 12-month termination volume · HR View (excludes sunsets, RIF, position eliminations, mutual agreements, no-shows) · program sunsets: Eylea, Madrigal, Novo Obesity; COA is not a sunset but had heavy RIF from Novo</p>
+  <div class="card"><table><tr><th>Program / Dept</th><th>Employees</th><th>R12 Turnover</th><th>Vol</th><th>Invol</th><th>R12 Terms</th><th>Vol Terms</th><th>Invol Terms</th></tr>
+  ${X.top.map((r,i)=>(i===5?`<tr><td colspan="8" style="text-align:left;color:var(--mut);font-size:11px;background:#fafbfc">Top 3 other departments</td></tr>`:i===0?`<tr><td colspan="8" style="text-align:left;color:var(--mut);font-size:11px;background:#fafbfc">Top 5 programs</td></tr>`:'')+`<tr><td>${r[1]}</td><td>${fmt.n(r[5])}</td><td><b>${r[2].toFixed(1)}%</b></td><td>${r[3].toFixed(1)}%</td><td>${r[4].toFixed(1)}%</td><td><b>${r[6]}</b></td><td>${r[7]}</td><td>${r[8]}</td></tr>`).join('')}</table></div>
+  <h2>Termination Reasons</h2><p class="note">YTD terminations, HR View · top 5 reasons plus all other</p>
+  <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+   ${[['All Terminations',X.reasonsAll,'#2b5fd9'],['Voluntary',X.reasonsVol,'#e0a100'],['Involuntary',X.reasonsInvol,'#d64545']].map(([t,d,c])=>`<div class="card chartcard"><h3>${t}</h3><div class="note">${d.total} YTD terminations</div>${hBars(d.rows.map(r=>[r[0],r[1],r[0]==='All Other'?'#b4bcc9':c]),d.total)}</div>`).join('')}</div>
+  <p class="note" style="margin-top:12px">Term reasons reflect the ${X.reasonsAll.total} YTD terminations excluding sunsets (HR View). Total YTD terminations are ${fmt.n(W.ytd.terms)}.</p>
+  <h2>Workforce Demographics</h2><p class="note">Employees only, contractors excluded · as of ${D.asOf} · ${fmt.n(D.total)} employees</p>
+  <div class="flag"><b>Proposed KPIs:</b> people of color (% of employees) and women in leadership (Director and above). Groups with fewer than 5 employees are combined with "Unknown" to protect privacy. This demographic file counts ${fmt.n(D.total)} employees as of 10/1, versus ${fmt.n(W.headcount)} on 10/12 in the HR headcount view, so totals differ by timing and source.</div>
+  <div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Gender</h3><div class="note">${fmt.n(D.total)} employees</div>${hBars(D.gender.map((x,i)=>[x[0],x[1],['#2b5fd9','#e0a100','#b4bcc9'][i]]),D.total)}</div>
+   <div class="card chartcard"><h3>Ethnicity / Race</h3><div class="note">${fmt.n(D.total)} employees</div>${hBars(D.ethnicity.map((x,i)=>[x[0],x[1],['#2b5fd9','#8a94a6','#d64545','#00a3a3','#1f9d63','#7c3aed','#b4bcc9'][i]]),D.total)}</div>
+   <div class="card chartcard"><h3>Age Distribution</h3><div class="note">Average age ${D.avgAge}</div>${hBars(D.age.map((x,i)=>[x[0],x[1],['#00b4d8','#2b5fd9','#16375f','#7c3aed'][i]]),D.total)}</div>
+   <div class="card chartcard"><h3>Generations</h3><div class="note">Share of employees</div>${hBars(D.generations.map((x,i)=>[x[0],x[1],['#7c3aed','#2b5fd9','#00b4d8','#1f9d63'][i]]),D.total)}</div></div>
+  <h2>HR Analytics Builds</h2><p class="note">Dashboards, tools and automated reports built March 2026 – present · as of ${HAB.asOf}</p>
+  <div class="flag"><b>Proposed KPI:</b> dashboard availability = builds that are active ÷ total builds (${HAB.items.filter(i=>i[3]==='Active').length} of ${HAB.items.length}, ${fmt.pct(HAB.items.filter(i=>i[3]==='Active').length/HAB.items.length)}). All items count equally; the in-development builds are Mobility, HRIS Audit, Weekly Terminations and Leader dashboards.</div>
+  ${cards([{label:'Active Builds',value:fmt.n(HAB.items.filter(i=>i[3]==='Active').length),type:'trk',sub:`${HAB.items.filter(i=>i[1]==='Dashboard'&&i[3]==='Active').length} dashboards · ${HAB.items.filter(i=>i[1]==='Tool'&&i[3]==='Active').length} tools · ${HAB.items.filter(i=>i[1]==='Automated report'&&i[3]==='Active').length} automated reports`},{label:'In Development',value:fmt.n(HAB.items.filter(i=>i[3]!=='Active').length),type:'trk',sub:'Mobility, HRIS Audit, Weekly Terminations, Leader'},{label:'Total Builds',value:fmt.n(HAB.items.length),type:'trk',sub:'Mar 2026 – present'}])}
+  <div class="card" style="margin-top:12px"><table><tr><th style="text-align:left">Build</th><th style="text-align:left">Type</th><th style="text-align:left">Audience</th><th style="text-align:left">Status</th><th style="text-align:left">Description</th></tr>${HAB.items.map(i=>`<tr><td style="text-align:left"><b>${i[0]}</b></td><td style="text-align:left">${i[1]}</td><td style="text-align:left">${i[2]||'—'}</td><td style="text-align:left"><span class="dot" style="background:${i[3]==='Active'?'var(--g)':'var(--y)'}"></span>${i[3]}</td><td style="text-align:left;color:var(--mut);font-size:12px">${i[4]}</td></tr>`).join('')}</table></div>
+  <h2>Contractor Spend</h2><p class="note">Finance actual spend, ${CN.asOf} month-end (Contractors Monthly Report) · contractors by department, FTE and annualized $</p>
+  <div class="flag"><b>Proposed KPIs:</b> annualized contractor spend and contractor FTE (${CN.asOf} actual). The weekly view (weeks ending ${CN.weeks[0]} – ${CN.weeks[3]}) is a <b>forecast</b>: ${CN.total.wkFTE.toFixed(1)} FTE and $${CN.total.wkSpend.toFixed(1)}M annualized, unchanged across the four weeks. Department figures are rounded as shown in the source, so they don't sum exactly to the totals. Covers the departments listed in the report; billable program contractors are not included.</div>
+  ${cards([{label:'Contractor Spend, Annualized (Sep actual)',value:'$'+CN.total.sepSpend.toFixed(1)+'M',type:'prop',sub:'Finance actual spend, Sep 2026'},{label:'Contractor FTE (Sep actual)',value:CN.total.sepFTE.toFixed(1),type:'prop',sub:'Contractors Monthly Report'},{label:'Forecast (Weekly View): Contractor FTE',value:CN.total.wkFTE.toFixed(1),type:'trk',sub:`Weeks ending ${CN.weeks[0]}–${CN.weeks[3]} · ${(CN.total.wkFTE-CN.total.sepFTE).toFixed(1)} vs Sep actual`},{label:'Forecast (Weekly View): Annualized Spend',value:'$'+CN.total.wkSpend.toFixed(1)+'M',type:'trk',sub:`−$${(CN.total.sepSpend-CN.total.wkSpend).toFixed(1)}M vs Sep actual`}])}
+  <div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Annualized Spend by Department (Sep actual)</h3><div class="note">$M · share of $${CN.total.sepSpend.toFixed(1)}M</div>${hBars(CN.depts.filter(d=>d[3]>0).map(d=>[d[0],d[3],'#2b5fd9']),CN.depts.reduce((a,d)=>a+d[3],0))}</div>
+   <div class="card chartcard"><h3>Contractor FTE by Department (Sep actual)</h3><div class="note">FTE · share of ${CN.depts.reduce((a,d)=>a+d[1],0).toFixed(1)} FTE</div>${hBars(CN.depts.filter(d=>d[1]>0).map(d=>[d[0],d[1],'#7c3aed']),CN.depts.reduce((a,d)=>a+d[1],0))}</div></div>
+  <div class="card" style="margin-top:12px"><table><tr><th style="text-align:left">Department</th><th>FTE (Sep actual)</th><th>FTE (forecast, weekly view)</th><th>Annualized $M (Sep actual)</th><th>Annualized $M (forecast, weekly view)</th></tr>${CN.depts.map(d=>`<tr><td style="text-align:left">${d[0]}</td><td>${d[1]?d[1].toFixed(1):'—'}</td><td>${d[2]?d[2].toFixed(1):'—'}</td><td>${d[3]?'$'+d[3].toFixed(1)+'M':'—'}</td><td>${d[4]?'$'+d[4].toFixed(1)+'M':'—'}</td></tr>`).join('')}<tr><th style="text-align:left">Total</th><th>${CN.total.sepFTE.toFixed(1)}</th><th>${CN.total.wkFTE.toFixed(1)}</th><th>$${CN.total.sepSpend.toFixed(1)}M</th><th>$${CN.total.wkSpend.toFixed(1)}M</th></tr></table></div>
+  <h2>Workforce Mix</h2><p class="note">Headcount views as of ${W.asOf} · employees ${fmt.n(W.headcount)} + contingent workers ${fmt.n(M.contingent)} = ${fmt.n(M.total)} total workforce</p>
+  <div class="grid2"><div class="card chartcard"><h3>Talent Segment</h3><div class="note">Active employees</div>${hBars(M.segments.map((x,i)=>[x[0],x[1],['#7c3aed','#7c3aed','#2b5fd9','#1f9d63','#e0a100','#8a94a6'][i]]),W.headcount)}</div>
+   <div class="card chartcard"><h3>Location</h3><div class="note">Active employees · hub ${fmt.pct(M.hub/W.headcount)}, remote ${fmt.pct(M.remote/W.headcount)}</div>${hBars(M.locations.map(x=>[x[0],x[1],x[0]==='Remote'?'#e0a100':'#2b5fd9']),W.headcount)}</div></div>
+  <div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Contingent Workers by Department</h3><div class="note">Departments with contingent workers</div><table><tr><th>Department</th><th>Employees</th><th>Contingent</th><th>% Contingent</th></tr>${M.contDepts.map(r=>`<tr><td>${r[0]}</td><td>${fmt.n(r[1])}</td><td>${r[2]}</td><td>${fmt.pct(r[2]/(r[1]+r[2]))}</td></tr>`).join('')}<tr><th>Total</th><th>${fmt.n(W.headcount)}</th><th>${M.contingent}</th><th>${fmt.pct(M.contingent/M.total)}</th></tr></table></div>
+   <div class="card chartcard"><h3>Job Class</h3><div class="note">Active employees</div><table><tr><th>Job Class</th><th>Employees</th><th>% of Total</th></tr>${M.jobClass.map(r=>`<tr><td>${r[0]}</td><td>${fmt.n(r[1])}</td><td>${fmt.pct(r[1]/W.headcount)}</td></tr>`).join('')}<tr><th style="text-align:left">Total</th><th>${fmt.n(M.jobClass.reduce((x,r)=>x+r[1],0))}</th><th>${fmt.pct(M.jobClass.reduce((x,r)=>x+r[1],0)/W.headcount)}</th></tr></table></div></div>
+`;
+}
+
+
+function leavePage(){
+  const L=LV, stT=sum(L.status.map(x=>x[1])), rsT=sum(L.reasons.map(x=>x[1]));
+  const cs=[
+   {label:'Leave Approval Rate',value:fmt.pct(L.approved/L.requests),type:'prop',sub:`${L.approved} of ${L.requests} requests approved or partially approved`},
+   {label:'Leave Requests (YTD)',value:fmt.n(L.requests),type:'trk',sub:`Jan 1 – ${L.asOf}`},
+   {label:'Employees on Approved Leave (YTD)',value:fmt.n(L.employeesApproved),type:'trk',sub:`${fmt.pct(L.employeesApproved/WFA.headcount)} of current headcount (${fmt.n(WFA.headcount)})`},
+   {label:'On Leave Today',value:fmt.n(L.onLeaveToday),type:'trk',sub:`${fmt.pct(L.onLeaveToday/WFA.headcount)} of headcount · current ADP status`},
+   {label:'Approved Leave Hours (YTD)',value:fmt.n(L.hours),type:'trk',sub:`${fmt.n(L.hours/L.approved)} hours per approved leave`},
+   {label:'Intermittent Leave: Daily Approval %',value:fmt.pct(L.intermApproval),type:'prop',sub:`Active intermittent · avg ${L.intermHours} daily hours`}];
+  return `<h2>Leave Administration</h2><p class="note">Employee Leave Analytics · 1/1/2026 – ${L.asOf} · aggregate counts</p>
+  <div class="flag"><b>Proposed KPIs:</b> leave approval rate (approved + partially approved ÷ total requests) and intermittent leave daily approval %. Denial rate is ${fmt.pct(L.status[3][1]/L.requests)} and cancellations ${fmt.pct(L.status[2][1]/L.requests)}. Approved reason labels are truncated in the source; the largest is read as the employee's own condition and should be confirmed. The monthly request counts shown (563 total) don't sum to ${L.requests}; the source may count by a different date. *October is partial.</div>`+cards(cs)+
+  `<div class="grid2" style="margin-top:12px">${chartCard('Monthly Leave Requests','From source trend chart',barChart(L.monthly.map(m=>m[0]),L.monthly.map(m=>m[1])))}
+   <div class="card chartcard"><h3>Request Status</h3><div class="note">${fmt.n(L.requests)} requests</div>${hBars(L.status.map(x=>[x[0],x[1],x[2]]),L.requests)}</div>
+   <div class="card chartcard"><h3>Approved Leave Reasons</h3><div class="note">${L.approved} approved leaves</div>${hBars(L.reasons.map((x,i)=>[x[0],x[1],i===0?'#2f7077':'#7c8fb3']),rsT)}</div></div>`;
+}
+
+
+
+function ratingsSection(){
+  const R=PR,A=R.summary.annual,M=R.summary.mid, a=A.completed, m=M.completed;
+  const d=(x,y,f)=>{const v=x-y;return (v>0?'+':v<0?'−':'')+f(Math.abs(v))};
+  const cr=x=>x.completed/x.inReview;
+  const hi=i=>R.dist[0][i]+R.dist[1][i], lo=i=>R.dist[3][i]+R.dist[4][i];
+  const cs=[
+   {label:'Review Completion Rate (Mid-Year 2026)',value:fmt.pct(cr(M)),type:'prop',sub:`${fmt.n(M.completed)} of ${fmt.n(M.inReview)} completed · ${M.pending} pending · Annual 2025: ${fmt.pct(cr(A))}`},
+   {label:'Average Rating Score (0–5)',value:M.avg.toFixed(2),type:'prop',sub:`Mid-Year 2026 · median ${M.median.toFixed(2)} · Annual 2025: ${A.avg.toFixed(2)}`},
+   {label:'Excelling + Exceptional',value:fmt.pct(hi(3)/m),type:'prop',sub:`${fmt.n(hi(3))} of ${fmt.n(m)} rated · Annual 2025: ${fmt.pct(hi(2)/a)}`},
+   {label:'Contributing + Needs Development',value:fmt.pct(lo(3)/m),type:'trk',sub:`${fmt.n(lo(3))} of ${fmt.n(m)} rated · Annual 2025: ${fmt.pct(lo(2)/a)}`},
+   {label:'Employees Rated (Mid-Year 2026)',value:fmt.n(m),type:'trk',sub:`Annual 2025: ${fmt.n(a)} rated`}];
+  const distRows=R.dist.map(r=>{const p1=r[2]/a*100,p2=r[3]/m*100;return `<div style="margin:12px 0"><div style="display:flex;justify-content:space-between;font-size:12px"><span><b>${r[0]}</b> <span style="color:var(--mut)">${r[1]}</span></span><span>Mid-Year <b>${p2.toFixed(1)}%</b> (${r[3]}) <span style="color:var(--mut)">· Annual ${p1.toFixed(1)}% (${r[2]})</span></span></div>
+   <div style="height:9px;background:#eceff4;border-radius:5px;margin-top:4px;overflow:hidden"><div style="width:${p2}%;height:100%;background:${r[4]}"></div></div>
+   <div style="height:5px;background:#eceff4;border-radius:3px;margin-top:2px;overflow:hidden"><div style="width:${p1}%;height:100%;background:${r[4]};opacity:.45"></div></div></div>`}).join('');
+  const grp=R.groups.map(g=>{const A1=g[1].annual,M1=g[1].mid;return `<tr><td>${g[0]}</td><td>${fmt.pct(A1.done/A1.total)}</td><td>${fmt.pct(M1.done/M1.total)}</td><td>${A1.avg.toFixed(2)}</td><td>${M1.avg.toFixed(2)}</td><td>${fmt.pct((A1.ex+A1.exl)/A1.done)}</td><td>${fmt.pct((M1.ex+M1.exl)/M1.done)}</td></tr>`}).join('');
+  const dep=PERF_DEPT.slice().sort((x,y)=>(x[5]/x[4])-(y[5]/y[4])).map(r=>`<tr><td>${r[0]}</td><td>${fmt.n(r[4])}</td><td>${fmt.n(r[5])}</td><td>${r[6]}</td><td style="color:${r[5]/r[4]<0.8?'var(--r)':'inherit'}">${fmt.pct(r[5]/r[4])}</td><td>${r[3]==null?'—':r[3].toFixed(2)}</td><td>${r[7]==null?'—':r[7].toFixed(2)}</td></tr>`).join('');
+  const rd=PERF_RATED_DEPT.slice().sort((x,y)=>((y[2]+y[3])/y[1])-((x[2]+x[3])/x[1])).map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${fmt.pct((r[2]+r[3])/r[1])}</td><td>${fmt.pct(r[4]/r[1])}</td><td>${fmt.pct((r[5]+r[6])/r[1])}</td></tr>`).join('');
+  return `<h2>Performance Ratings</h2><p class="note">Annual 2025 and Mid-Year 2026 are separate review cycles (Mid-Year period Jan 1 – Jun 30, 2026) · rating scale 0–5.00 · aggregate counts only</p>
+  <div class="flag"><b>Proposed KPIs:</b> review completion rate, average rating score, and % Excelling + Exceptional. The Mid-Year 2026 cycle covers about 900 more employees than Annual 2025 (2,321 vs 1,417), so compare cycles with care. Department detail is limited to groups with 5+ rated employees; average scores are hidden below that.</div>`+cards(cs)+
+  `<div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Rating Distribution</h3><div class="note">% of rated employees · thick bar = Mid-Year 2026, thin bar = Annual 2025</div>${distRows}</div>
+   <div class="card chartcard"><h3>By Employee Group</h3><div class="note">Completion, average score, and % Excelling + Exceptional</div><table><tr><th>Group</th><th>Compl. Annual</th><th>Compl. Mid</th><th>Avg Annual</th><th>Avg Mid</th><th>% Top Annual</th><th>% Top Mid</th></tr>${grp}</table></div></div>
+  <div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Mid-Year Completion by Department</h3><div class="note">Sorted by lowest completion · red below 80%</div><table><tr><th>Department</th><th>In Review</th><th>Done</th><th>Pending</th><th>Compl.</th><th>Avg Annual</th><th>Avg Mid</th></tr>${dep}</table></div>
+   <div class="card chartcard"><h3>Mid-Year Ratings by Department</h3><div class="note">Departments with 5+ rated · sorted by % Excelling + Exceptional</div><table><tr><th>Department</th><th>Rated</th><th>% Excelling+</th><th>% Performing</th><th>% Contrib./Needs Dev.</th></tr>${rd}</table></div></div>`;
+}
+function performancePage(){ return ratingsSection()+pmSection(); }
+
+function pmSection(){
+  const P=PM;
+  const pipRec=P.actions[3][1];
+  const cs=[
+   {label:'PIPs Initiated',value:fmt.n(pipRec),type:'prop',sub:`${P.pipInitiatedEmployees} employees · ${P.actions[4][1]} extensions · since May`},
+   {label:'Employees with a Warning or PIP',value:fmt.n(P.employees),type:'prop',sub:`${P.records} records · May – Oct 2026`},
+   {label:'Final Warnings Issued',value:fmt.n(P.actions[1][1]),type:'trk',sub:`${P.actions[0][1]} written warnings · ${P.actions[2][1]} suspensions`},
+   {label:'Employees No Longer Active After Action',value:fmt.pct(P.empDeact/P.employees),type:'trk',sub:`${P.empDeact} of ${P.employees} deactivated (terminated) · ${P.empActive} still active`},
+   {label:'PIP Employees No Longer Active',value:fmt.pct(P.pipDeact/P.pipEmployees),type:'trk',sub:`${P.pipDeact} of ${P.pipEmployees} employees with a PIP · not causal`}];
+  const rows=P.actions.map(a=>`<tr><td>${a[0]}</td><td>${a[1]}</td><td>${a[2]}</td><td>${a[3]}</td><td>${fmt.pct(a[3]/a[1])}</td></tr>`).join('');
+  const catT=sum(P.cats.map(c=>c[1]));
+  return `<h2>Performance Management — PIPs &amp; Warnings</h2><p class="note">PIPs and corrective actions · HR Acuity (tracking began May 2026) · records opened May 6 – Oct 21, 2026 · refreshed ${P.asOf} · aggregate counts only</p>
+  <div class="flag"><b>Proposed KPIs:</b> PIPs initiated and employees with a warning or PIP. There is no history before May. "No longer active" means the employee profile is deactivated (terminated) as of today for any reason, not necessarily as a result of the action. Issue categories are grouped from HR Acuity sub-categories; roughly 39% of records are performance-related and the rest are attendance and conduct. *October is partial.</div>`+cards(cs)+
+  `<div class="grid2" style="margin-top:12px">${chartCard('Records Opened by Month','All PIPs and corrective actions',barChart(P.months,P.monthly))}
+   <div class="card chartcard"><h3>Records by Issue Category</h3><div class="note">${catT} records</div>${hBars(P.cats.map((c,i)=>[c[0],c[1],['#2b5fd9','#e0a100','#d64545','#b4bcc9'][i]]),catT)}</div>
+   <div class="card chartcard"><h3>Action Type &amp; Current Employee Status</h3><div class="note">Records, by whether the employee is still active</div><table><tr><th>Action</th><th>Records</th><th>Active</th><th>Deactivated</th><th>% Deactivated</th></tr>${rows}</table></div>
+   ${chartCard('Warnings &amp; PIPs by Month','Written · Final · PIP initiated',lineChart(P.months,[{name:'Written',data:P.monthlyWritten},{name:'Final',data:P.monthlyFinal},{name:'PIP initiated',data:P.monthlyPip}]))}</div>`;
+}
+
+
+function benefitsK(){
+  const B=BEN,n=B.months.length-1,m=v=>v>=1e6?'$'+(v/1e6).toFixed(2)+'M':'$'+Math.round(v/1e3)+'K';
+  const sg=v=>(v<0?'−':'+')+m(Math.abs(v));
+  const pepmE=B.expense.map((v,i)=>v/B.emp[i]), pepmF=B.funding.map((v,i)=>v/B.emp[i]);
+  const ytdE=B.expense.slice(4).reduce((a,b)=>a+b,0)/B.emp.slice(4).reduce((a,b)=>a+b,0), ytdF=B.funding.slice(4).reduce((a,b)=>a+b,0)/B.emp.slice(4).reduce((a,b)=>a+b,0);
+  const ratioCol=r=>r>1.05?'var(--r)':r>1?'var(--y)':'var(--g)';
+  const L=B.largeClaimants;
+  return {B,n,m,sg,pepmE,pepmF,ytdE,ytdF,cards:{
+   emp:{label:'Employees in Medical Plan',value:fmt.n(B.emp[n]),type:'kpi',sub:`${fmt.n(B.mem[n])} members · +${((B.emp[n]/B.emp[4]-1)*100).toFixed(1)}% since Jan · ${B.months[n]}`},
+   pytd:{label:'Plan-to-Date Cost vs Forecast (Mar–Aug)',value:fmt.pct(B.py.ratio),type:'kpi',sub:`${m(B.py.expense)} cost vs ${m(B.py.funding)} funding · ${sg(B.py.surplus)} (${B.periods[0][2]}%)`},
+   ytd:{label:'YTD Cost vs Forecast (Jan–Aug)',value:fmt.pct(B.cy.ratio),type:'kpi',sub:`${m(B.cy.expense)} cost vs ${m(B.cy.funding)} funding · ${sg(B.cy.surplus)} (${B.periods[3][2]}%)`},
+   r12:{label:'Rolling 12-Month Cost vs Forecast',value:fmt.pct(B.r12.ratio),type:'trk',sub:`${m(B.r12.expense)} cost vs ${m(B.r12.funding)} funding · ${sg(B.r12.surplus)}`},
+   yoy:{label:'YOY Cost vs Forecast (Plan Year, Mar–Aug)',value:`${B.periods[0][2]}% vs +${B.periods[1][2]}%`,type:'kpi',sub:`Surplus/(deficit) % of funding, this year vs same period last year · swing ${sg(B.periods[0][1]-B.periods[1][1])}`},
+   large:{label:'Large Claimants Over $400K',value:fmt.n(L.over400PY),type:'kpi',sub:`Plan year · ${L.over400CY} on calendar-year basis · ${L.over100PY} claimants ≥ $100K this plan year`},
+   pepm:{label:'Monthly Cost PEPM',value:fmt.usd(pepmE[n]),type:'kpi',sub:`${B.months[n]} · funded ${fmt.usd(pepmF[n])} · YTD avg ${fmt.usd(ytdE)} vs ${fmt.usd(ytdF)} funded`},
+   rebate:{label:'Rx Rebates (YTD)',value:m(B.rebateCY),type:'kpi',sub:`Plan year ${m(B.rebatePY)} · none received Jul/Aug`}}};
+}
+function benefitsPage(){
+  const K=benefitsK(),B=K.B,m=K.m,n=K.n,c=K.cards,H=B.hc;
+  const kf=v=>'$'+Math.round(v/1000)+'K';
+  const rows=B.periods.map(p=>`<tr><td>${p[0]}</td><td style="color:${p[1]<0?'var(--r)':'var(--g)'}">${p[1]<0?'−':'+'}${fmt.usd(Math.abs(p[1]))}</td><td style="color:${p[1]<0?'var(--r)':'var(--g)'}">${p[2]>0?'+':''}${p[2]}%</td></tr>`).join('');
+  const sumArr=(a)=>a.reduce((x,y)=>x+y,0);
+  return `<h2>Medical &amp; Pharmacy Plan</h2><p class="note">Self-funded plan · vendor report through ${B.asOf} · plan year starts March · aggregate financials only</p>
+  <div class="flag"><b>Assumptions to confirm:</b> "Forecast" = total plan funding (AssistRx + employee) since no separate forecast was provided. Cost = claims + admin less Rx rebates and stop-loss reimbursements. PEPM = cost (or funding) ÷ enrolled employees; the vendor reports PMPM (per member): expense $${B.pmpm.expense} vs funded $${B.pmpm.funded} for the prior 12 months. High-cost claimant data is shown only as counts, dollar totals, and bands (no ages, diagnoses, or other attributes). The calendar-year table totals $3.16M, while the vendor narrative cites $2.96M; the table total is used.</div>`+
+  cards([c.emp,c.pytd,c.ytd,c.yoy,c.large,c.pepm,c.rebate,c.r12])+
+  `<h2>High-Cost Claimants (≥ $100K)</h2><p class="note">Aggregated counts and dollars only; no claimant-level details are shown</p>`+
+  cards([{label:'High-Cost Claimants — Plan Year',value:fmt.n(H.py.count),type:'trk',sub:`${m(H.py.spend)} paid · ${fmt.pct(H.py.spend/H.py.claims)} of plan-year paid claims`},
+   {label:'High-Cost Claimants — Calendar Year',value:fmt.n(H.cy.count),type:'trk',sub:`${m(H.cy.spend)} paid · ${fmt.pct(H.cy.spend/H.cy.claims)} of calendar-year paid claims`},
+   {label:'August Paid Claims from High-Cost Claimants',value:fmt.pct(H.aug.spend/H.aug.claims),type:'trk',sub:`${m(H.aug.spend)} of ${m(H.aug.claims)} · ${H.aug.newCount} new over $100K in August (${m(H.aug.newSpend)})`}])+
+  `<div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Calendar Year: Claimants by Paid-Claims Band</h3><div class="note">${H.cy.count} claimants · ${m(H.cy.spend)}</div>${hBars(H.cy.bands.map((b,i)=>[b[0],b[1],['#d64545','#e0a100','#7c3aed','#2b5fd9'][i]]),H.cy.count)}</div>
+   <div class="card chartcard"><h3>Plan Year: Claimants by Paid-Claims Band</h3><div class="note">${H.py.count} claimants · ${m(H.py.spend)}</div>${hBars(H.py.bands.map((b,i)=>[b[0],b[1],['#e0a100','#7c3aed','#2b5fd9'][i]]),H.py.count)}</div></div>`+
+  `<div class="card" style="margin-top:12px"><h3 style="margin:0 0 4px;font-size:13px">August Highlights (vendor summary)</h3><ul class="m"><li>August paid medical claims rose 20% from July to $1.82M; pharmacy fell 15% to $621K.</li><li>August deficit of $676K erased the small year-to-date surplus; driven mainly by large-claimant activity (2 new claimants over $100K, $530K combined).</li><li>No stop-loss reimbursements or Rx rebates were received in August.</li><li>Individual stop-loss threshold rose from $300K to $400K in March 2026. Plan-year claims for the highest-cost claimant remain under the $400K deductible.</li></ul></div>`+
+  `<div class="grid2" style="margin-top:12px">${chartCard('Monthly Cost vs Funding','Total plan expense vs total funding',lineChart(B.months,[{name:'Cost',data:B.expense},{name:'Funding',data:B.funding}],{f:kf}))}
+   ${chartCard('Monthly Surplus / (Deficit)','Funding minus cost',divBarChart(B.months,B.surplus,{f:v=>(v<0?'−':'')+'$'+Math.abs(Math.round(v/1000))+'K'}))}
+   ${chartCard('Monthly Cost PEPM','Cost vs funding per enrolled employee',lineChart(B.months,[{name:'Cost PEPM',data:K.pepmE},{name:'Funded PEPM',data:K.pepmF}],{f:v=>'$'+Math.round(v)}))}
+   ${chartCard('Employees Enrolled in Medical Plan','Month-end',lineChart(B.months,[{name:'Employees',data:B.emp}]))}
+   ${chartCard('Paid Claims: Medical vs Pharmacy','Monthly paid claims',lineChart(B.months,[{name:'Medical',data:B.medical},{name:'Pharmacy',data:B.rx}],{f:kf}))}
+   ${chartCard('Rx Rebate Activity','Rebates received by month · 12-month total '+m(B.rebate12),barChart(B.months,B.rebates,{f:v=>v?kf(v):'$0',color:'#1f9d63'}))}</div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">Surplus / (Deficit) by Period</h3><table><tr><th>Period</th><th>Surplus / (Deficit)</th><th>% of Funding</th></tr>${rows}</table><ul class="m"><li>Rx rebates were received in Sep, Dec, Mar and Jun months; stop-loss reimbursements ${m(sumArr(B.slReimb))} over 12 months.</li></ul></div>`;
+}
+
+
+function recognitionPage(){
+  const R=RR, vW=R.values.length*4, tW=R.tl.length*4, viW=R.vision.length, tot=vW+tW+viW;
+  const est=vW*(500+50)+viW*(2500+100), pto=vW+viW;
+  const cs=[
+   {label:'Recognition Awards Announced (2026)',value:fmt.n(tot),type:'prop',sub:`${vW} Values · ${tW} #TransformingLives · ${viW} Vision`},
+   {label:'Quarterly Award Cycles Completed',value:fmt.n(R.values.length),type:'trk',sub:'Values and #TransformingLives, each with 4 division winners'},
+   {label:'Division Coverage',value:'4 of 4',type:'trk',sub:'Every division recognized in every cycle'},
+   {label:'Estimated Award Cost (gift cards)',value:fmt.usd(est),type:'trk',sub:`From policy amounts for Values + Vision winners and nominators · plus ${pto} PTO days`}];
+  const prog=R.programs.map(p=>`<tr><td><b>${p[0]}</b></td><td style="text-align:left">${p[1]}</td><td style="text-align:left">${p[2]}</td><td style="text-align:left">${p[3]}</td><td style="text-align:left">${p[4]}</td></tr>`).join('');
+  const pend=`<tr><td style="text-align:left"><b>Sep 2026</b></td><td colspan="4" style="text-align:left;color:var(--mut)">Announced in Nov (town hall)</td></tr>`;
+  const vrows=R.values.map(c=>`<tr><td style="text-align:left"><b>${c[0]}</b></td>${c[1].map(w=>`<td style="text-align:left">${w[0]}<br><span style="color:var(--mut);font-size:11px">${w[1]}</span></td>`).join('')}</tr>`).join('');
+  const trows=R.tl.map(c=>`<tr><td style="text-align:left"><b>${c[0]}</b></td>${c[1].map(w=>`<td style="text-align:left">${w}</td>`).join('')}</tr>`).join('');
+  const dh=R.divisions.map(d=>`<th style="text-align:left">${d}</th>`).join('');
+  const vm=R.valueMentions, vmT=vm.reduce((a,b)=>a+b[1],0);
+  return `<h2>Rewards &amp; Recognition</h2><p class="note">Companywide recognition programs · winners as announced at town halls</p>
+  <div class="flag"><b>Proposed KPI:</b> recognition awards announced (all programs). Estimated award cost is calculated from policy reward amounts, not actual spend. Celebrations and other corporate recognition were not provided and remain placeholders. The Sep 2026 cycle winners (Values and #TransformingLives) will be announced at the November town hall.</div>`+cards(cs)+
+  `<div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">Recognition Programs</h3><table><tr><th>Program</th><th style="text-align:left">Frequency</th><th style="text-align:left">Selection</th><th style="text-align:left">Recipients</th><th style="text-align:left">Reward</th></tr>${prog}</table></div>
+  <div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Core Values Demonstrated by Values Award Winners</h3><div class="note">${vW} winners · ${vmT} value mentions (winners can cite several)</div>${hBars(vm.map((v,i)=>[v[0],v[1],['#2b5fd9','#7c3aed','#1f9d63','#e0a100','#d64545'][i]]),vmT)}</div>
+   <div class="card chartcard"><h3>Vision Award</h3><div class="note">Annual · one overall winner</div><table><tr><th>Year</th><th style="text-align:left">Winner</th><th style="text-align:left">Division</th></tr>${R.vision.map(v=>`<tr><td style="text-align:left">${v[0]}</td><td style="text-align:left">${v[1]}</td><td style="text-align:left">${v[2]}</td></tr>`).join('')}</table></div></div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">Values Award Winners</h3><table><tr><th style="text-align:left">Cycle</th>${dh}</tr>${pend}${vrows}</table></div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">#TransformingLives Recipients</h3><table><tr><th style="text-align:left">Cycle</th>${dh}</tr>${pend}${trows}</table></div>
+  <h2 style="font-size:13px;color:var(--mut)">Celebrations &amp; Corporate Recognition</h2>`+placeholder('Awaiting data','Celebrations (anniversaries, milestones) · Other corporate recognition');
+}
+
+
+function erPage(){
+  const E=ER, T=E.tiers;
+  const augTot=[3,4,5].reduce((a,i)=>a+E.t1[i]+E.t2[i]+E.t3[i]+E.un[i],0), augTiered=[3,4,5].reduce((a,i)=>a+E.t1[i]+E.t2[i]+E.t3[i],0);
+  const old30=E.aging[2][1]+E.aging[3][1];
+  const cs=[
+   {label:'Total ER Cases (May – Oct)',value:fmt.n(E.total),type:'prop',sub:`HR Acuity · ${fmt.n(E.total-E.open)} closed`},
+   {label:'Open Cases',value:fmt.n(E.open),type:'prop',sub:`${fmt.pct(E.open/E.total)} of cases · as of ${E.asOf}`},
+   {label:'Open Cases Older Than 30 Days',value:fmt.n(old30),type:'trk',sub:`${fmt.pct(old30/E.open)} of open · ${E.aging[3][1]} older than 60 days`},
+   {label:'Tier 1 Resolved Within 48 Hours',value:fmt.pct(T['Tier 1'].within),type:'prop',sub:`${T['Tier 1'].closed} closed Tier 1 cases · standard 24–48 hours`},
+   {label:'Tier 2 Resolved Within 10 Business Days',value:fmt.pct(T['Tier 2'].within),type:'prop',sub:`${T['Tier 2'].closed} closed Tier 2 cases · standard 3–10 business days`},
+   {label:'Tier 3 Cases',value:fmt.n(T['Tier 3'].n),type:'trk',sub:`${T['Tier 3'].open} open · count only`},
+   {label:'Cases with a Tier Assigned (since Aug)',value:fmt.pct(augTiered/augTot),type:'trk',sub:`${fmt.n(augTiered)} of ${fmt.n(augTot)} cases opened Aug – Oct`}];
+  const tierTot=T['Tier 1'].n+T['Tier 2'].n+T['Tier 3'].n;
+  const trow=['Tier 1','Tier 2','Tier 3','Unassigned'].map(k=>`<tr><td>${k}</td><td>${fmt.n(T[k].n)}</td><td>${T[k].open}</td><td>${T[k].avgDays.toFixed(1)}</td><td>${T[k].medDays}</td></tr>`).join('');
+  const grow=E.groups.map(g=>`<tr><td>${g[0]}</td><td>${g[1]}</td><td>${g[2]}</td><td>${g[3]}</td><td>${g[4]}</td><td>${g[5]}</td></tr>`).join('');
+  const defs=E.defs.map(d=>`<tr><td><b>${d[0]}</b></td><td style="text-align:left">${d[1]}</td><td style="text-align:left">${d[2]}</td><td style="text-align:left">${d[3]}</td></tr>`).join('');
+  return `<h2>Employee Relations</h2><p class="note">Cases documented in HR Acuity · system launched May 2026 · data through ${E.asOf} · a blank close date means the case is open · aggregate counts only</p>
+  <div class="flag"><b>Proposed KPIs:</b> total and open cases, Tier 1 resolution within 48 hours, and Tier 2 resolution within 10 business days. <b>Tier labeling began in August</b>, so ${fmt.n(T['Unassigned'].n)} of ${fmt.n(E.total)} cases (${fmt.pct(T['Unassigned'].n/E.total)}) have no tier and tier metrics reflect mostly Aug – Oct. Resolution timing uses open and close dates (no timestamps), so "within 48 hours" means closed within 2 calendar days. Tier 3 is shown as counts only. *October is partial.</div>`+cards(cs)+
+  `<div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Cases Opened by Month</h3><div class="note">By tier · most cases before August are unassigned</div>${stackBarChart(E.months,[{name:'Tier 1',data:E.t1,color:'#2b5fd9'},{name:'Tier 2',data:E.t2,color:'#e0a100'},{name:'Tier 3',data:E.t3,color:'#d64545'},{name:'Unassigned',data:E.un,color:'#b4bcc9'}])}</div>
+   <div class="card chartcard"><h3>Open Case Aging</h3><div class="note">${E.open} open as of ${E.asOf} · age since opened</div>${hBars(E.aging.map((a,i)=>[a[0],a[1],['#1f9d63','#2b5fd9','#e0a100','#d64545'][i]]),E.open)}</div>
+   <div class="card chartcard"><h3>Tier Mix (tiered cases)</h3><div class="note">${tierTot} tiered cases</div>${hBars(['Tier 1','Tier 2','Tier 3'].map((k,i)=>[k,T[k].n,['#2b5fd9','#e0a100','#d64545'][i]]),tierTot)}</div>
+   <div class="card chartcard"><h3>Time to Close by Tier</h3><div class="note">Calendar days, closed cases</div><table><tr><th>Tier</th><th>Cases</th><th>Open</th><th>Avg Days</th><th>Median Days</th></tr>${trow}</table></div></div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">Cases by Program / Group (top 10 of ${E.groupCount})</h3><table><tr><th>Group</th><th>Cases</th><th>Open</th><th>Tier 1</th><th>Tier 2</th><th>Tier 3</th></tr>${grow}</table><ul class="m"><li>Programs affected by reorgs and sunsets (Obesity, COA) account for the largest case volumes.</li></ul></div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">Tier Definitions</h3><table><tr><th>Tier</th><th style="text-align:left">Scope</th><th style="text-align:left">Owner</th><th style="text-align:left">Standard</th></tr>${defs}</table><ul class="m"><li>Cases auto-escalate to Tier 3 for protected-class language, threats, named executive or HR staff, confidentiality requests from leadership, or external agency/attorney involvement.</li></ul></div>`;
+}
+
+
+
+function pdSection(){
+  const P=PDS, d26=P.surveys.filter(x=>x.status==='data'), f26=d26.reduce((a,x)=>a+x.fav,0), i26=d26.reduce((a,x)=>a+x.items,0), r26=d26.reduce((a,x)=>a+x.responses,0);
+  const all=P.surveys.filter(x=>x.status==='data'||x.status==='historical'), fAll=all.reduce((a,x)=>a+x.fav,0), iAll=all.reduce((a,x)=>a+x.items,0);
+  const tg={label:'90% favorable',green:0.9,yellow:0.8};
+  const cs=[
+   {label:'PD Series Effectiveness (% favorable)',value:fmt.pct(f26/i26),raw:f26/i26,type:'kpi',target:tg,sub:`2026 responses · ${r26} respondents · ${fmt.n(f26)} of ${fmt.n(i26)} item responses · incl. historical: ${fmt.pct(fAll/iAll)}`},
+   {label:'Depth of Participation',value:null,type:'ph',target:{label:'+5% quarter over quarter · repeat PD participants vs prior quarter'},sub:'Awaiting data · twice-monthly email to be automated'},
+   {label:'Reach (New Participation)',value:null,type:'ph',target:{label:'+2% quarter over quarter · first-time PD participants vs prior quarter'},sub:'Awaiting data · twice-monthly email to be automated'},
+   {label:'New Manager PD Completion',value:null,type:'ph',target:{label:'50% · new managers with 1+ PD course within 90 days ÷ new managers reaching 90 days'},sub:'Awaiting data · new-manager identifier to be built in Power BI, then Absorb data'},
+   {label:'Direct Leader Engagement (contributing indicator)',value:null,type:'ph',target:{label:'+2 pts year over year · annual engagement survey direct-leader questions'},sub:'Future KPI · baseline from July survey or next survey'}];
+  const srows=P.surveys.map(x=>x.status==='data'||x.status==='historical'?`<tr><td style="text-align:left">${x.name}${x.status==='historical'?' <span class="b trk">Historical</span>':''}</td><td>${x.responses}</td><td style="text-align:left">${x.period}</td><td>${fmt.pct(x.fav/x.items)}</td><td>${fmt.pct(x.first.fav/x.first.n)}</td><td>${x.nps.toFixed(1)}</td></tr>`:`<tr><td style="text-align:left">${x.name}</td><td>${x.responses==null?'—':x.responses}</td><td style="text-align:left">${x.period||'—'}</td><td colspan="3" style="text-align:left;color:var(--mut)">${x.status==='screenshot'?'Response file needed (only the overview was provided)':'No data yet'}</td></tr>`).join('');
+  const mrows=P.monthly.map(m=>`<tr><td style="text-align:left">${m[0]}</td><td>${m[1]}</td><td>${fmt.pct(m[2]/m[3])}</td></tr>`).join('');
+  return `<div class="flag"><b>PD series effectiveness</b> is the share of favorable responses (Agree or Strongly Agree) across the loaded L1 surveys. The headline uses 2026 responses only; First Class Customer Experience responses are from Mar 2024 – Jun 2025. The "NPS" column applies the first sentiment question: the 0–10 recommend question where available (First Class), otherwise % Strongly Agree/5 minus % detractors; please confirm the method. Post-Session Feedback (168 responses) was provided as a screenshot only, and the two Leadership in Action surveys have no data. Individual responses were not retained; only aggregates are shown.</div>`+cards(cs)+
+  `<div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">PD Survey Results</h3><table><tr><th style="text-align:left">Survey</th><th>Responses</th><th style="text-align:left">Period</th><th>% Favorable</th><th>First Question % Favorable</th><th>NPS</th></tr>${srows}</table><ul class="m"><li>First questions: Leadership Starts Here — "${P.surveys[0].first.label}"; Professional Presence — "${P.surveys[1].first.label}"; First Class — "${P.surveys[2].first.label}".</li></ul></div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">2026 % Favorable by Month</h3><table><tr><th style="text-align:left">Month</th><th>Responses</th><th>% Favorable</th></tr>${mrows}</table><ul class="m"><li>Months with no responses (Jan, May) are omitted. Counts are small outside February.</li></ul></div>`;
+}
+
+
+function ldOverviewAcademy(){
+  const A=ACAD, C=A.classes, enr=C.reduce((a,c)=>a+c[1],0), ns=C.reduce((a,c)=>a+c[2],0), gr=C.reduce((a,c)=>a+c[3],0), tm=C.reduce((a,c)=>a+c[4],0), att=enr-ns;
+  const hires=A.hiresMarOct; // PAS and CSR new hires Mar–Oct 2026 (Academy launched in March)
+  const cs=[
+   {label:'Stakeholder Satisfaction',value:null,type:'ph',target:{label:'80% favorable · L&D intake requestor survey, quarterly'},sub:'Future state · JIRA data or new survey, process TBD'},
+   {label:'Learner Satisfaction',value:null,type:'kpi',target:{label:'90% favorable · Business Training L1 survey, monthly'},sub:'Awaiting data · MS Forms: Learning and Development Training Survey'},
+   {label:'Academy Penetration',value:fmt.pct(att/hires),type:'prop',target:{label:'TBD (20%?)'},sub:`${att} participants (enrolled less no-shows) ÷ ${fmt.n(hires)} PAS and CSR new hires, Mar – Oct 2026 · ${fmt.pct(att/A.hiresYtd)} of ${A.hiresYtd} YTD hires`}];
+  const acs=[
+   {label:'Academy Graduation Rate',value:fmt.pct(gr/att),type:'prop',sub:`${gr} graduates ÷ ${att} (enrolled ${enr} less ${ns} no-shows) · ${C.length} classes`},
+   {label:'Academy Overall Effectiveness (1–5)',value:A.evalTotal[1].toFixed(2),type:'trk',sub:`${A.evalTotal[0]} evaluations Aug – ${A.asOf}`},
+   {label:'Academy Trainer Satisfaction (1–5)',value:A.evalTotal[2].toFixed(2),type:'trk',sub:'Facilitator question, Aug – today'},
+   {label:'Academy Enrollment',value:fmt.n(enr),type:'trk',sub:`${C.length} classes · ${ns} no-shows (${fmt.pct(ns/enr)})`},
+   {label:'Terminations During Academy',value:fmt.n(tm),type:'trk',sub:`${fmt.pct(tm/att)} of participants who started the Academy`}];
+  const crow=C.map(c=>{const a=c[1]-c[2];return `<tr><td style="text-align:left">${c[0]}</td><td>${c[1]}</td><td>${c[2]||'—'}</td><td>${a}</td><td>${c[3]}</td><td>${c[4]}</td><td><b>${fmt.pct(c[3]/a)}</b></td></tr>`}).join('');
+  const erow=A.evals.map(e=>`<tr><td style="text-align:left">${e[0]}</td><td>${e[1]}</td><td>${e[2].toFixed(2)}</td><td>${e[3].toFixed(2)}</td></tr>`).join('');
+  return `<h2 style="font-size:13px;color:var(--mut)">L&amp;D Overall</h2>`+cards(cs)+
+  `<h2 style="font-size:13px;color:var(--mut);margin-top:16px">Academy (shared with all HR)</h2>
+  <div class="flag"><b>Academy graduation rate</b> = graduates ÷ (enrollment − no-shows). <b>Academy penetration</b> = participants (enrollment − no-shows) ÷ new hires in PAS and CSR roles (the Academy's target population) since it launched in March (458 hires Mar – Oct; 647 YTD for the full year; target TBD, possibly 20%). The table covers all 6 Academy classes to date. Each Academy survey response is one learner's evaluation of one session, so counts are much higher than the number of learners; scores are 1–5 averages, not % favorable. Class results come from a screenshot.</div>`+cards(acs)+
+  `<div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Academy Class Results</h3><div class="note">Graduation rate vs enrollment less no-shows</div><table><tr><th style="text-align:left">Start Date</th><th>Enrolled</th><th>No Shows</th><th>Attended</th><th>Graduated</th><th>Term</th><th>Grad Rate</th></tr>${crow}<tr><th style="text-align:left">Total</th><th>${enr}</th><th>${ns}</th><th>${att}</th><th>${gr}</th><th>${tm}</th><th>${fmt.pct(gr/att)}</th></tr></table></div>
+   ${chartCard('Graduation Rate by Class','% of enrollment less no-shows',barChart(C.map(c=>c[0]),C.map(c=>Math.round(c[3]/(c[1]-c[2])*1000)/10),{f:v=>v.toFixed(0)+'%',color:'#1f9d63'}))}
+   <div class="card chartcard"><h3>Academy Evaluations (1–5 scale)</h3><div class="note">A2T2 end-of-course survey · evaluations, not learners</div><table><tr><th style="text-align:left">Month</th><th>Responses</th><th>Overall Effectiveness</th><th>Trainer Satisfaction (Facilitator)</th></tr>${erow}<tr><th style="text-align:left">Aug – today</th><th>${A.evalTotal[0]}</th><th>${A.evalTotal[1].toFixed(2)}</th><th>${A.evalTotal[2].toFixed(2)}</th></tr></table></div></div>`;
+}
+
+function ldPage(){
+  const L=LD, tg={label:'90% favorable',green:0.9,yellow:0.8};
+  const kcs=[
+   {label:'Facilitator Effectiveness',value:null,type:'kpi',target:tg,sub:`% favorable (Agree / Strongly Agree) · Business Training · avg score ${L.program.total[1].toFixed(2)} / 5`},
+   {label:'Facilitator Satisfaction',value:null,type:'kpi',target:tg,sub:`% favorable · Business Training · avg score ${L.program.total[2].toFixed(2)} / 5`},
+   {label:'Welcome Orientation Participation',value:null,type:'kpi',target:tg,sub:'New hires attended ÷ scheduled, monthly · attendance data not yet provided'},
+   {label:'Welcome Orientation Satisfaction',value:null,type:'kpi',target:tg,sub:`% favorable · avg score ${L.wo.total[1].toFixed(2)} / 5`},
+   {label:'Fifth Facilitation KPI',value:null,type:'ph',sub:'Definition not yet provided'}];
+  const tcs=[
+   {label:'Program Training: Overall Effectiveness',value:L.program.total[1].toFixed(2),type:'trk',sub:`Avg of 9 questions · ${L.program.total[0]} responses · 1–5 scale`},
+   {label:'Program Training: Trainer (Facilitator) Satisfaction',value:L.program.total[2].toFixed(2),type:'trk',sub:'Avg of 3 facilitator questions · 1–5 scale'},
+   {label:'Welcome Orientation: Overall Effectiveness',value:L.wo.total[1].toFixed(2),type:'trk',sub:`Avg of 8 questions · ${L.wo.total[0]} responses · 1–5 scale`},
+   {label:'Welcome Orientation: Trainer (Ambassador) Satisfaction',value:L.wo.total[2].toFixed(2),type:'trk',sub:'Avg of 2 ambassador questions · 1–5 scale'}];
+  const bar=v=>v==null?'<span style="color:var(--mut)">n/a</span>':`<div style="display:flex;align-items:center;gap:6px;justify-content:flex-end"><div class="bar" style="width:70px;margin:0"><i style="width:${v/5*100}%"></i></div><b>${v.toFixed(2)}</b></div>`;
+  const tbl=(t,lab)=>`<table><tr><th>Month</th><th>Responses</th><th>Overall Effectiveness</th><th>${lab}</th></tr>${t.rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${bar(r[2])}</td><td>${bar(r[3])}</td></tr>`).join('')}<tr><th>Aug – today</th><th>${t.total[0]}</th><th>${t.total[1].toFixed(2)}</th><th>${t.total[2].toFixed(2)}</th></tr></table>`;
+  return `<h2>Learning &amp; Development</h2><p class="note">Overall, Academy program, facilitation, instructional design, professional development</p>`+ldOverviewAcademy()+`
+  <h2 style="font-size:13px;color:var(--mut);margin-top:20px">Facilitation</h2><p class="note">Level 1 survey · August 2026 through ${L.asOf}</p>
+  <div class="flag"><b>Targets set (90%) but data not yet in the KPI format:</b> the KPIs are defined as % of responses favorable (Agree or Strongly Agree), but the survey results provided are 1–5 averages (5 = Strongly Agree), so % favorable can't be calculated. Averages are shown below as Tracking. Send % favorable (or the response-level counts) and attendance for Welcome Orientation to populate the KPIs. Only four of the five facilitation KPIs were listed; the fifth is a placeholder.</div>`+cards(kcs)+
+  `<h2 style="font-size:13px;color:var(--mut);margin-top:16px">Level 1 Results (1–5 scale)</h2>`+cards(tcs)+
+  `<div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Program Training (excludes Academy)</h3><div class="note">Overall effectiveness and trainer (facilitator) satisfaction</div>${tbl(L.program,'Trainer Satisfaction (Facilitator)')}<ul class="m"><li>No program training classes were held in October; only Academy classes were supported.</li></ul></div>
+   <div class="card chartcard"><h3>Welcome Orientation</h3><div class="note">Overall effectiveness and trainer (ambassador) satisfaction</div>${tbl(L.wo,'Trainer Satisfaction (Ambassador)')}<ul class="m"><li>No orientations were held in October; 5 late-October submissions are counted in September.</li></ul></div></div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 4px;font-size:13px">Definitions</h3><ul class="m"><li>Overall effectiveness = average of all rated questions (Program: 9 questions; Welcome Orientation: 8 questions).</li><li>Trainer satisfaction = Program: average of 3 facilitator questions; Welcome Orientation: average of 2 ambassador questions.</li><li>Aug – today rows are pooled across all responses.</li></ul></div>
+  <h2 style="font-size:13px;color:var(--mut)">Instructional Design</h2><p class="note">Business Training content · no data yet · 5 KPIs defined</p>
+  <div class="flag">Instructional Design KPIs are defined but no data has been provided. Two are future-state KPIs (objective alignment; annual maintenance, planned for 2027), and three are waiting on an Excel-style format from the L&amp;D lead. Content effectiveness and satisfaction will pull from Absorb and A2T2 combined.</div>`+
+  cards([{label:'Objective Alignment of Content & L2 Assessments',value:null,type:'ph',target:{label:'90% · new courses with aligned content and L2 assessment ÷ new courses reviewed, monthly'},sub:'Future state · process to be brainstormed'},
+   {label:'Template Compliance',value:null,type:'kpi',target:{label:'+10 pts month over month until 90% · programs converted to the new template ÷ programs in portfolio, monthly'},sub:'Awaiting data · format to be provided'},
+   {label:'Content Effectiveness',value:null,type:'kpi',target:{label:'90% favorable (Agree / Strongly Agree) on content effectiveness items, monthly'},sub:'Awaiting data · Absorb + A2T2 combined'},
+   {label:'Content Satisfaction',value:null,type:'kpi',target:{label:'90% favorable (Agree / Strongly Agree) on content satisfaction items, monthly'},sub:'Awaiting data · Absorb + A2T2 combined'},
+   {label:'Annual Maintenance',value:null,type:'ph',target:{label:'90% · annual reviews completed ÷ due, year-to-date rate tracked monthly'},sub:'Future state 2027 · after process documentation'}])+
+  `<h2 style="font-size:13px;color:var(--mut)">Professional Development</h2><p class="note">PD series L1 surveys (MS Forms) · 6 surveys listed · 3 loaded, 1 screenshot only, 2 pending</p>`+pdSection();
+}
+
+
+function hrisPage(){
+  const H=HRIS, col={'Fully Implemented':'var(--g)','In Progress':'#2b5fd9','In Procurement':'var(--y)','Not Started':'#b4bcc9'};
+  const cnt=k=>H.projects.filter(p=>p[1]===k).length;
+  const sc={'Available':'var(--g)','Partial':'var(--y)','Gap':'var(--r)'};
+  const K=HK.kpis, byN=n=>K.find(k=>k[0]===n);
+  const kcard=(n,label,value,sub)=>{const k=byN(n);return {label,value,type:'prop',sub:value==null?`Data status: ${k[5]} · ${k[6]}`:sub}};
+  const cs=[
+   kcard(1,'New Hires (Sep 2026)',fmt.n(53),'ADP onboarding export'),
+   kcard(2,'Onboarding Experience Completion Rate',fmt.pct(43/53),'43 of 53 external hires completed · 5 in progress · 5 not started'),
+   kcard(5,'ADP Term Tickets Sent (Oct 1–20)',fmt.n(152),'2 still open as of Oct 20'),
+   kcard(6,'HRIS Issues Resolved (last 30 days)',fmt.n(855),'Sep 21 – Oct 20 · 24 active days'),
+   kcard(7,'HRIS Resolution Time, Total (last 30 days)',fmt.n(2164)+' days','Across 855 resolved issues'),
+   kcard(8,'HRIS Average Resolution Time',(2164/855).toFixed(1)+' days','Last 30 days · last 7 days (Oct 14–20): 3.7 · Sep 21–Oct 13: 2.2'),
+   kcard(3,'Onboarding Compliance (Audited Profiles)',null),
+   kcard(4,'Internal Move Hire Execution Time',null),
+   kcard(9,'Data Entry Error Rate',null),
+   kcard(10,'ADP Spot-Check Pass Rate',null),
+   kcard(14,'VerifyComply Monthly Census Compliance Rate',null)];
+  const krows=K.map(k=>`<tr><td>${k[0]}</td><td style="text-align:left">${k[1]}</td><td style="text-align:left"><b>${k[2]}</b></td><td style="text-align:left;font-size:11px">${k[3]}</td><td style="text-align:left;font-size:11px">${k[4]}</td><td style="text-align:left"><span class="dot" style="background:${sc[k[5]]}"></span>${k[5]}</td><td style="text-align:left;font-size:11px;color:var(--mut)">${k[6]}</td></tr>`).join('');
+  const rows=H.projects.map(p=>`<tr><td style="text-align:left"><b>${p[0]}</b></td><td style="text-align:left"><span class="dot" style="background:${col[p[1]]}"></span>${p[1]}</td><td>${p[2]||'—'}</td><td style="text-align:left;color:var(--mut)">${p[3]||''}</td></tr>`).join('');
+  const pcs=[{label:'HRIS Projects',value:fmt.n(H.projects.length),type:'sta',sub:`As of ${H.asOf}`},{label:'Fully Implemented',value:fmt.n(cnt('Fully Implemented')),type:'sta',sub:'HR Acuity (May 2026) · iCIMS (Aug 2026)'},{label:'In Progress / In Procurement',value:fmt.n(cnt('In Progress')+cnt('In Procurement')),type:'sta',sub:'Career Site Landing Pages · EverCheck'},{label:'Not Started',value:fmt.n(cnt('Not Started')),type:'sta',sub:'Snowflake Integration'}];
+  return `<h2>HRIS</h2><h2 style="font-size:13px;color:var(--mut)">KPIs</h2><p class="note">11 Tier 1 KPIs, reported monthly · 6 have data, 5 are partial or gaps (shown as Awaiting data with the data status)</p>
+  <div class="flag"><b>Notes:</b> "New hires" here (53 for September) comes from the ADP onboarding export and may differ from the 65 September hires in Workforce Analytics, which use a different source and definition. Time-window figures (term tickets Oct 1–20; HRIS queue last 30 days) are partial periods and will update as data refreshes. KPI numbers are shown as listed in the HRIS KPI overview (#1–10 and #14).</div>`+cards(cs)+
+  `<div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:13px">HRIS KPI Definitions &amp; Data Status</h3><table><tr><th>#</th><th style="text-align:left">Area</th><th style="text-align:left">KPI</th><th style="text-align:left">Measure</th><th style="text-align:left">Data Source</th><th style="text-align:left">Data Status</th><th style="text-align:left">Supporting Data</th></tr>${krows}</table></div>
+  <h2 style="font-size:13px;color:var(--mut);margin-top:20px">Project Updates</h2><p class="note">Non-measurable items, reported as status rather than KPIs · as of ${H.asOf}</p>`+cards(pcs)+
+  `<div class="card" style="margin-top:12px"><table><tr><th style="text-align:left">Project</th><th style="text-align:left">Status</th><th>Implementation / Target Date</th><th style="text-align:left">Note</th></tr>${rows}</table></div>`;
+}
+function ph(title,items){return `<h2>${title}</h2>`+placeholder('Awaiting data',items)}
+const PH={
+ 'HR Events':ph('HR Events','Lunch & learns hosted · Benefit fair · Flu clinics')
+};
+
+function body(){
+  const p=state.page;
+  const pg=PAGES.find(x=>x.id===p); const name=pg.subs[state.sub[p]];
+  if(p==='rewards'&&name==='Wellness') return benefitsDeep();
+  if(p==='rewards'&&name==='Compensation & Bonus') return compBonusPage();
+  if(p==='culture'&&name==='Engagement Survey') return engagementPage();
+  if(p==='culture'&&name==='ERGs') return ergPage();
+  if(p==='ops'&&name==='Workforce Analytics') return wfaPage();
+  if(p==='ops'&&name==='HRIS') return hrisPage();
+  if(p==='rewards'&&name==='Leaves') return leavePage();
+  if(p==='rewards'&&name==='Rewards & Recognition') return recognitionPage();
+  if(p==='rewards'&&name==='Benefits') return benefitsPage();
+  if(p==='ops'&&name==='HR Operations') return opsPage();
+  if(p==='talent'&&name==='Talent') return talentPage();
+  if(p==='talent'&&name==='Learning & Development') return ldPage();
+  if(p==='talent'&&name==='Employee Relations') return erPage();
+  if(p==='talent'&&name==='Performance') return performancePage();
+  if(p==='talent'&&name==='Talent Acquisition') return talentAcqPage();
+  if(p==='talent'&&name==='Redeployments') return redeployPage();
+  return PH[name];
+}
+function render(){
+  $('#nav').innerHTML=PAGES.map(p=>`<button class="${p.id===state.page?'on':''}" onclick="go('${p.id}')">${p.name}</button>`).join('');
+  const pg=PAGES.find(x=>x.id===state.page);
+  const sub=pg.subs?`<div class="sub">${pg.subs.map((s,i)=>`<button class="${i===state.sub[pg.id]?'on':''}" onclick="goSub(${i})">${s}</button>`).join('')}</div>`:'';
+  $('#main').innerHTML=sub+body();
+  $('#asof').textContent='HealthiestYou data through '+HY.months[n]+' 2026';
+  window.scrollTo(0,0);
+}
+function go(id){state.page=id;render()}
+function goSub(i){state.sub[state.page]=i;render()}
+function printView(mode){
+  const keep={page:state.page,sub:Object.assign({},state.sub)};
+  let items=[];
+  PAGES.forEach(p=>{
+    if(mode!=='all'&&p.id!==state.page)return;
+    (p.subs||[null]).forEach((n,i)=>{ if(mode==='tab'&&i!==state.sub[p.id])return; items.push([p,i,n]); });
+  });
+  let html='';
+  items.forEach(([p,i,n])=>{state.page=p.id;if(n)state.sub[p.id]=i;html+=`<section class="pgbrk"><div class="psec">${p.name}${n?' · '+n:''}</div>${body()}</section>`;});
+  Object.assign(state,{page:keep.page,sub:keep.sub});
+  $('#main').innerHTML=html;
+  const done=()=>{window.removeEventListener('afterprint',done);render()};
+  window.addEventListener('afterprint',done);
+  setTimeout(()=>window.print(),100);
+}
+render();
+</script>
+</body>
+</html>
