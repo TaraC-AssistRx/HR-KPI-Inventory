@@ -485,7 +485,7 @@ const COE=[
  {id:'rewards',name:'Total Rewards',topics:[['Benefits',1],['Health Wellness',1],['Financial Wellness',1],['ADA',1],['Workers Comp',.5],['Leave Administration',1],['Compensation',1],['Bonus Spend',1],['Rewards & Recognition',.5]]},
  {id:'talent',name:'Talent Management',topics:[['Performance Mgmt',1],['Recruiting',1],['Glassdoor',1],['Employee Relations',1],['L&D',1],['Talent Review',1],['Succession Planning',1],['Redeployments',1]]},
  {id:'ops',name:'Operations',topics:[['Workforce Analytics',.5],['HRIS',.5],['HR Operations',.5]]},
- {id:'culture',name:'Engagement & Culture',topics:[['Engagement Survey',1],['ERGs',1],['HR Events',0]]}
+ {id:'culture',name:'Engagement & Culture',topics:[['Engagement Survey',1],['ERGs',1],['HR Events',1]]}
 ];
 
 function overview(){
@@ -759,6 +759,20 @@ function engagementPage(){
 }
 
 
+function hrEventsPage(){
+  const cs=[
+   {label:'Wellness Fairs Hosted',value:'3',type:'prop',sub:'2026 YTD (assumed)'},
+   {label:'New Hire Benefits Orientation Attendance',value:'84%',type:'prop',sub:'Share of new hires attending'},
+   {label:'OneVersity Outreach View Rate',value:'82%',type:'prop',sub:'Share of recipients who viewed'},
+   {label:'HR SharePoint Page Visits',value:'13K',type:'trk',sub:'Visits to date'},
+   {label:'Culture Corner Average Views',value:'75%',type:'prop',sub:'Average view rate'},
+   {label:'HR Campaigns Launched',value:'6',type:'trk',sub:'See list below'}];
+  const camps=['Benefits wallet card delivery','401K financial wellness campaign','HR Ticketing system','Offboarding Service','HR Digital Information Share','Career Center Hub and Service for Redeployments and RIFs'];
+  return `<h2>HR Events &amp; Communications</h2><p class="note">Events, outreach engagement and campaigns</p>
+  <div class="flag"><b>Proposed KPIs:</b> wellness fairs hosted, new hire benefits orientation attendance, OneVersity outreach view rate, Culture Corner view rate, and campaigns launched. <b>Assumptions:</b> counts are 2026 year to date; "75% average views" is read as an average view rate; no targets set yet.</div>`+cards(cs)+
+  `<div class="grid2" style="margin-top:12px"><div class="card chartcard"><h3>Campaigns Launched</h3><div class="note">${camps.length} campaigns</div><table>${camps.map((c,i)=>`<tr><td style="text-align:left">${i+1}. ${c}</td></tr>`).join('')}</table></div>
+  <div class="card chartcard"><h3>External Recognition</h3><div class="note">Employer awards</div><table><tr><td style="text-align:left">Best Place to Work – Orlando</td><td>2025</td></tr><tr><td style="text-align:left">Best Place to Work – Orlando</td><td>2026</td></tr></table></div></div>`;
+}
 function ergPage(){
   const E=ERG, tot=E.months.map((_,i)=>E.groups.reduce((x,g)=>x+g[2][i],0));
   const cs=[
@@ -1113,6 +1127,7 @@ function body(){
   if(p==='rewards'&&name==='Compensation & Bonus') return compBonusPage();
   if(p==='culture'&&name==='Engagement Survey') return engagementPage();
   if(p==='culture'&&name==='ERGs') return ergPage();
+  if(p==='culture'&&name==='HR Events') return hrEventsPage();
   if(p==='ops'&&name==='Workforce Analytics') return wfaPage();
   if(p==='ops'&&name==='HRIS') return hrisPage();
   if(p==='rewards'&&name==='Leaves') return leavePage();
