@@ -66,7 +66,7 @@ ul.m{margin:6px 0 0;padding-left:18px;color:var(--mut);font-size:12px}
 </head>
 <body>
 <header>
-  <h1><span>HR KPI Dashboard <small id="asof"></small></span><span class="pbar"><button onclick="printView('tab')">PDF: this tab</button><button onclick="printView('coe')">PDF: this COE</button><button onclick="printView('all')">PDF: all tabs</button></span></h1>
+  <h1><span>HR KPI Dashboard</span><span class="pbar"><button onclick="printView('tab')">PDF: this tab</button><button onclick="printView('coe')">PDF: this COE</button><button onclick="printView('all')">PDF: all tabs</button></span></h1>
   <nav id="nav"></nav>
 </header>
 <main id="main"></main>
@@ -1197,7 +1197,6 @@ function render(){
   const pg=PAGES.find(x=>x.id===state.page);
   const sub=pg.subs?`<div class="sub">${pg.subs.map((s,i)=>`<button class="${i===state.sub[pg.id]?'on':''}" onclick="goSub(${i})">${s}</button>`).join('')}</div>`:'';
   $('#main').innerHTML=sub+body();
-  $('#asof').textContent='HealthiestYou data through '+HY.months[n]+' 2026';
   window.scrollTo(0,0);
 }
 function go(id){state.page=id;render()}
